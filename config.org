@@ -18,7 +18,7 @@
 (setq user-full-name "Vincenzo Pace"
       user-mail-address "vincenzo.pace94@icloud.com")
 
-(setq display-battery-mode t)
+(display-battery-mode 1)
 (setq-default
       delete-by-moving-to-trash t
       window-combination-resize t
