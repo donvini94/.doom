@@ -43,6 +43,9 @@
 
 ;; [[file:config.org::*Keybindings][Keybindings:1]]
 (map! "C-c s" #'org-save-all-org-buffers)
+(after! pdf-tools
+  (map! :map pdf-view-mode-map
+        :n "h" #'pdf-annot-add-highlight-markup-annotation))
 ;; Keybindings:1 ends here
 
 ;; [[file:config.org::*Keybindings within ibuffer mode][Keybindings within ibuffer mode:1]]
@@ -311,6 +314,19 @@
 (setq leetcode-save-solutions t)
 (setq leetcode-directory "~/code/leetcode")
 ;; Leetcode:1 ends here
+
+;; [[file:config.org::*Nix][Nix:1]]
+;(use-package lsp-nix
+;  :ensure lsp-mode
+;  :after (lsp-mode)
+;  :demand t
+;  :custom
+;  (lsp-nix-nil-formatter ["nixfmt"]))
+;
+;(use-package nix-mode
+;  :hook (nix-mode . lsp-deferred)
+;  :ensure t)
+;; Nix:1 ends here
 
 ;; [[file:config.org::*File permissions and ownership][File permissions and ownership:1]]
 (map! :leader

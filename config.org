@@ -62,6 +62,10 @@ Bookmarks are somewhat like registers in that they record positions you can jump
 ** Keybindings
 #+begin_src emacs-lisp
 (map! "C-c s" #'org-save-all-org-buffers)
+(after! pdf-tools
+  (map! :map pdf-view-mode-map
+        :n "h" #'pdf-annot-add-highlight-markup-annotation))
+
 #+end_src
 
 ** Keybindings within ibuffer mode
@@ -353,6 +357,19 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
 (setq leetcode-prefer-language "rust")
 (setq leetcode-save-solutions t)
 (setq leetcode-directory "~/code/leetcode")
+#+end_src
+* Nix
+#+begin_src emacs-lisp
+;(use-package lsp-nix
+;  :ensure lsp-mode
+;  :after (lsp-mode)
+;  :demand t
+;  :custom
+;  (lsp-nix-nil-formatter ["nixfmt"]))
+;
+;(use-package nix-mode
+;  :hook (nix-mode . lsp-deferred)
+;  :ensure t)
 #+end_src
 
 * DIRED
