@@ -26,7 +26,7 @@
  (evil +everywhere); come to the dark side, we have cookies
  file-templates    ; auto-snippets for empty files
  fold              ; (nigh) universal code folding
- (format +onsave)  ; automated prettiness
+ (format )  ; automated prettiness
  snippets          ; my elves. They type so I don't have to
  word-wrap         ; soft wrapping with language-aware indent
 
@@ -76,7 +76,7 @@
  plantuml          ; diagrams for confusing people more
  (python +lsp +pyright +tree-sitter)            ; beautiful is better than ugly
  (rust +lsp +tree-sitter)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
- (sh +lsp +powershell)                ; she sells {ba,z,fi}sh shells on the C xor
+ (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
  web               ; the tubes
  (yaml +lsp)              ; JSON, but readable
 

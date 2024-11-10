@@ -20,3 +20,4 @@
 (package! modus-themes)
 (package! leetcode)
 (package! org-super-agenda)
+(package! wakatime-mode)
