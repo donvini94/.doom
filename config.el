@@ -34,13 +34,6 @@
         ))
 ;; Company:1 ends here
 
-;; [[file:config.org::*Bookmarks][Bookmarks:1]]
-(map! :leader
-      (:prefix ("b". "buffer")
-       :desc "List bookmarks" "L" #'list-bookmarks
-       :desc "Save current bookmarks to bookmark file" "w" #'bookmark-save))
-;; Bookmarks:1 ends here
-
 ;; [[file:config.org::*Keybindings][Keybindings:1]]
 (map! "C-c s" #'org-save-all-org-buffers)
 (after! pdf-tools
@@ -154,6 +147,10 @@
 
 ;; [[file:config.org::*Org Roam][Org Roam:1]]
 (use-package! org-roam
+  :after org
+  :config
+    (advice-remove 'org-roam-db-query '+org-roam-try-init-db-a))
+(use-package! org-roam
         :config
         (setq org-roam-capture-templates
         '(("m" "main" plain
@@ -171,7 +168,7 @@
 
         ("p" "paper" plain "%?"
         :if-new
-        (file+head "papers/${slug}.org" "#+title: ${title}\n#+filetags: :paper:\n- source ::  \n \n* Content \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
+        (file+head "papers/${slug}.org" "${title}\n#+filetags: :paper:\n- source ::  \n \n* Content \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
         :immediate-finish t
         :unnarrowed t)
 
@@ -315,6 +312,10 @@
 (setq leetcode-directory "~/code/leetcode")
 ;; Leetcode:1 ends here
 
+;; [[file:config.org::*vterm][vterm:1]]
+(setq vterm-shell "/etc/profiles/per-user/vincenzo/bin/nu")
+;; vterm:1 ends here
+
 ;; [[file:config.org::*Nix][Nix:1]]
 ;(use-package lsp-nix
 ;  :ensure lsp-mode
@@ -437,3 +438,10 @@
   (add-to-list 'copilot-indentation-alist '(closure-mode 2))
   (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
 ;; COPILOT:1 ends here
+
+;; [[file:config.org::*Japanese][Japanese:1]]
+(setq fcitx-use-dbus nil
+      fcitx-remote-command "fcitx5-remote")
+;;(setq fcitx-use-dbus "fcitx5")
+(fcitx-aggressive-setup)
+;; Japanese:1 ends here

@@ -21,3 +21,4 @@
 (package! leetcode)
 (package! org-super-agenda)
 (package! wakatime-mode)
+(package! fcitx)

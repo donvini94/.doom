@@ -50,15 +50,6 @@
         ))
 #+end_src
 
-** Bookmarks
-Bookmarks are somewhat like registers in that they record positions you can jump to.  Unlike registers, they have long names, and they persist automatically from one Emacs session to the next. The prototypical use of bookmarks is to record where you were reading in various files.
-
-#+BEGIN_SRC emacs-lisp
-(map! :leader
-      (:prefix ("b". "buffer")
-       :desc "List bookmarks" "L" #'list-bookmarks
-       :desc "Save current bookmarks to bookmark file" "w" #'bookmark-save))
-#+END_SRC
 ** Keybindings
 #+begin_src emacs-lisp
 (map! "C-c s" #'org-save-all-org-buffers)
@@ -196,6 +187,10 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
 ** Org Roam
 #+begin_src emacs-lisp
 (use-package! org-roam
+  :after org
+  :config
+    (advice-remove 'org-roam-db-query '+org-roam-try-init-db-a))
+(use-package! org-roam
         :config
         (setq org-roam-capture-templates
         '(("m" "main" plain
@@ -213,7 +208,7 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
 
         ("p" "paper" plain "%?"
         :if-new
-        (file+head "papers/${slug}.org" "#+title: ${title}\n#+filetags: :paper:\n- source ::  \n \n* Content \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
+        (file+head "papers/${slug}.org" "${title}\n#+filetags: :paper:\n- source ::  \n \n* Content \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
         :immediate-finish t
         :unnarrowed t)
 
@@ -232,7 +227,7 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
                         "* %?"
                         :target (file+head "%<%Y-%m-%d>.org"
 "#+title: %<%Y-%m-%d %a>
-#+filetags:
+,#+filetags:
 
 ,#+BEGIN: clocktable
 ,#+END:
@@ -357,6 +352,10 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
 (setq leetcode-prefer-language "rust")
 (setq leetcode-save-solutions t)
 (setq leetcode-directory "~/code/leetcode")
+#+end_src
+** vterm
+#+begin_src emacs-lisp
+(setq vterm-shell "/etc/profiles/per-user/vincenzo/bin/nu")
 #+end_src
 * Nix
 #+begin_src emacs-lisp
@@ -562,3 +561,10 @@ https://github.com/seagle0128/doom-modeline
   (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
 #+end_src
 *
+* Japanese
+#+begin_src emacs-lisp
+(setq fcitx-use-dbus nil
+      fcitx-remote-command "fcitx5-remote")
+;;(setq fcitx-use-dbus "fcitx5")
+(fcitx-aggressive-setup)
+#+end_src

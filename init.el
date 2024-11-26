@@ -5,6 +5,9 @@
  (company +childframe)             ; the ultimate code completion backend
  (vertico +icons)           ; the search engine of the future
 
+ :input
+ japanase
+
  :ui
  doom              ; what makes DOOM look the way it does
  ;;doom-dashboard    ; a nifty splash screen for Emacs
@@ -26,7 +29,7 @@
  (evil +everywhere); come to the dark side, we have cookies
  file-templates    ; auto-snippets for empty files
  fold              ; (nigh) universal code folding
- (format )  ; automated prettiness
+ (format +onsave)  ; automated prettiness
  snippets          ; my elves. They type so I don't have to
  word-wrap         ; soft wrapping with language-aware indent
 
@@ -56,7 +59,6 @@
  (magit +forge)             ; a git porcelain for Emacs
  pass              ; password manager for nerds
  pdf               ; pdf enhancements
- terraform
  tree-sitter
 
  :os
@@ -73,7 +75,7 @@
  (markdown +grip)          ; writing docs for people to ignore
  (nix +tree-sitter +lsp)               ; I hereby declare "nix geht mehr!"
  (org +dragndrop +pomodoro +pandoc +roam2)               ; organize your plain life in plain text
- plantuml          ; diagrams for confusing people more
+ ;;plantuml          ; diagrams for confusing people more
  (python +lsp +pyright +tree-sitter)            ; beautiful is better than ugly
  (rust +lsp +tree-sitter)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
  (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
