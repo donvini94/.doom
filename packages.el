@@ -3,7 +3,6 @@
 
 (package! deadgrep)
 (package! org-clock-convenience)
-(package! org-bullets)
 (package! anki-editor
   :recipe (:host github :repo "anki-editor/anki-editor"))
 (package! org-auto-tangle)
@@ -15,8 +14,8 @@
 (package! dashboard)
 (package! org-modern
   :recipe (:host github :repo "minad/org-modern"))
-(package! copilot
-  :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
+;;(package! copilot
+;;  :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
 (package! modus-themes)
 (package! leetcode)
 (package! org-super-agenda)

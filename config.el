@@ -7,6 +7,7 @@
       delete-by-moving-to-trash t
       window-combination-resize t
       x-stretch-cursor t
+      cursor-type nil
       major-mode 'org-mode
       history-length 1000
       prescient-history-length 1000)
@@ -140,7 +141,9 @@
         org-pomodoro-short-break-length 5
         org-pomodoro-long-break-length 20
         org-pomodoro-manual-break t
-        org-pomodoro-play-sounds nil ))
+        org-pomodoro-play-sounds nil )
+  (setq org-pretty-entities t)
+)
 (setq org-todo-keywords
       '((sequence "TODO(t)" "NEXT(n)" "HOLD(h)" "|" "DONE(d)")))
 ;; General Settings:1 ends here
@@ -163,6 +166,12 @@
         ("r" "reference" plain "%?"
         :if-new
         (file+head "reference/${slug}.org" "#+title: ${title}\n#+filetags: \n- source :: \n\n ")
+        :immediate-finish t
+        :unnarrowed t)
+
+        ("P" "people" plain "%?"
+        :if-new
+        (file+head "people/${slug}.org" "#+title: ${title}\n#+filetags: \n* Company\n* Contact Info\n* Job title\n ")
         :immediate-finish t
         :unnarrowed t)
 
@@ -191,7 +200,7 @@
 
 #+BEGIN: clocktable
 #+END:
-\n* The one thing \n* Today \n* Goals\n - [ ]
+\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ]
 
       ")
     )
@@ -422,21 +431,21 @@
 ;; MODELINE:1 ends here
 
 ;; [[file:config.org::*COPILOT][COPILOT:1]]
-(use-package! copilot
-  :hook (prog-mode . copilot-mode)
-  :bind (:map copilot-completion-map
-              ("<tab>" . 'copilot-accept-completion)
-              ("TAB" . 'copilot-accept-completion)
-              ("C-TAB" . 'copilot-accept-completion-by-word)
-              ("C-<tab>" . 'copilot-accept-completion-by-word)
-              ("C-n" . 'copilot-next-completion)
-              ("C-p" . 'copilot-previous-completion))
-
-  :config
-  (add-to-list 'copilot-indentation-alist '(prog-mode 2))
-  (add-to-list 'copilot-indentation-alist '(python-mode 2))
-  (add-to-list 'copilot-indentation-alist '(closure-mode 2))
-  (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
+;(use-package! copilot
+;  :hook (prog-mode . copilot-mode)
+;  :bind (:map copilot-completion-map
+;              ("<tab>" . 'copilot-accept-completion)
+;              ("TAB" . 'copilot-accept-completion)
+;              ("C-TAB" . 'copilot-accept-completion-by-word)
+;              ("C-<tab>" . 'copilot-accept-completion-by-word)
+;              ("C-n" . 'copilot-next-completion)
+;              ("C-p" . 'copilot-previous-completion))
+;
+;  :config
+;  (add-to-list 'copilot-indentation-alist '(prog-mode 2))
+;  (add-to-list 'copilot-indentation-alist '(python-mode 2))
+;  (add-to-list 'copilot-indentation-alist '(closure-mode 2))
+;  (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
 ;; COPILOT:1 ends here
 
 ;; [[file:config.org::*Japanese][Japanese:1]]
