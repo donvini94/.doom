@@ -205,7 +205,7 @@
 
 #+BEGIN: clocktable
 #+END:
-\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n
+\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]
 
       ")
     )
@@ -436,21 +436,21 @@
 ;; MODELINE:1 ends here
 
 ;; [[file:config.org::*COPILOT][COPILOT:1]]
-(use-package! copilot
-  :hook (prog-mode . copilot-mode)
-  :bind (:map copilot-completion-map
-              ("<tab>" . 'copilot-accept-completion)
-              ("TAB" . 'copilot-accept-completion)
-              ("C-TAB" . 'copilot-accept-completion-by-word)
-              ("C-<tab>" . 'copilot-accept-completion-by-word)
-              ("C-n" . 'copilot-next-completion)
-              ("C-p" . 'copilot-previous-completion))
-
-  :config
-  (add-to-list 'copilot-indentation-alist '(prog-mode 2))
-  (add-to-list 'copilot-indentation-alist '(python-mode 2))
-  (add-to-list 'copilot-indentation-alist '(closure-mode 2))
-  (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
+;(use-package! copilot
+;  :hook (prog-mode . copilot-mode)
+;  :bind (:map copilot-completion-map
+;              ("<tab>" . 'copilot-accept-completion)
+;              ("TAB" . 'copilot-accept-completion)
+;              ("C-TAB" . 'copilot-accept-completion-by-word)
+;              ("C-<tab>" . 'copilot-accept-completion-by-word)
+;              ("C-n" . 'copilot-next-completion)
+;              ("C-p" . 'copilot-previous-completion))
+;
+;  :config
+;  (add-to-list 'copilot-indentation-alist '(prog-mode 2))
+;  (add-to-list 'copilot-indentation-alist '(python-mode 2))
+;  (add-to-list 'copilot-indentation-alist '(closure-mode 2))
+;  (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
 ;; COPILOT:1 ends here
 
 ;; [[file:config.org::*Japanese][Japanese:1]]
