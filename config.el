@@ -200,7 +200,7 @@
 
 #+BEGIN: clocktable
 #+END:
-\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ]
+\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]
 
       ")
     )
