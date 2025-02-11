@@ -3,7 +3,6 @@
 
 (package! deadgrep)
 (package! org-clock-convenience)
-(package! org-bullets)
 (package! anki-editor
   :recipe (:host github :repo "anki-editor/anki-editor"))
 (package! org-auto-tangle)
@@ -22,3 +21,4 @@
 (package! org-super-agenda)
 (package! wakatime-mode)
 (package! fcitx)
+(package! textx-mode)

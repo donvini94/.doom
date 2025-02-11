@@ -7,6 +7,7 @@
       delete-by-moving-to-trash t
       window-combination-resize t
       x-stretch-cursor t
+      cursor-type nil
       major-mode 'org-mode
       history-length 1000
       prescient-history-length 1000)
@@ -39,6 +40,9 @@
 (after! pdf-tools
   (map! :map pdf-view-mode-map
         :n "h" #'pdf-annot-add-highlight-markup-annotation))
+(map! :leader
+      :prefix "m a"
+      :desc "Org download clipboard" "c" #'org-download-clipboard)
 ;; Keybindings:1 ends here
 
 ;; [[file:config.org::*Keybindings within ibuffer mode][Keybindings within ibuffer mode:1]]
@@ -123,7 +127,9 @@
       (setq org-download-image-org-width 600)
       (setq org-download-link-format "[[file:%s]]\n"
         org-download-abbreviate-filename-function #'file-relative-name)
-      (setq org-download-link-format-function #'org-download-link-format-function-default))
+      (setq org-download-link-format-function #'org-download-link-format-function-default)
+      (setq org-download-screenshot-method "grim -g \"$(slurp)\" %s")
+        )
 (with-eval-after-load 'org (global-org-modern-mode))
 (after! org
   :config
@@ -140,7 +146,9 @@
         org-pomodoro-short-break-length 5
         org-pomodoro-long-break-length 20
         org-pomodoro-manual-break t
-        org-pomodoro-play-sounds nil ))
+        org-pomodoro-play-sounds nil )
+  (setq org-pretty-entities t)
+)
 (setq org-todo-keywords
       '((sequence "TODO(t)" "NEXT(n)" "HOLD(h)" "|" "DONE(d)")))
 ;; General Settings:1 ends here
@@ -166,9 +174,15 @@
         :immediate-finish t
         :unnarrowed t)
 
+        ("P" "people" plain "%?"
+        :if-new
+        (file+head "people/${slug}.org" "#+title: ${title}\n#+filetags: \n* Company\n* Contact Info\n* Job title\n ")
+        :immediate-finish t
+        :unnarrowed t)
+
         ("p" "paper" plain "%?"
         :if-new
-        (file+head "papers/${slug}.org" "${title}\n#+filetags: :paper:\n- source ::  \n \n* Content \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
+        (file+head "papers/${slug}.org" "${title}\n#+filetags: :paper:\n- source ::  \n \n* TLDR \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
         :immediate-finish t
         :unnarrowed t)
 
@@ -191,7 +205,7 @@
 
 #+BEGIN: clocktable
 #+END:
-\n* The one thing \n* Today \n* Goals\n - [ ]
+\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n
 
       ")
     )
