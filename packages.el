@@ -21,4 +21,4 @@
 (package! org-super-agenda)
 (package! wakatime-mode)
 (package! fcitx)
-(package! textx-mode)
+(package! with-venv)

@@ -52,7 +52,7 @@
  direnv
  (docker +lsp)
  editorconfig      ; let someone else argue about tabs vs spaces
- ein               ; tame Jupyter notebooks with emacs
+ ;;ein               ; tame Jupyter notebooks with emacs
  (eval +overlay)     ; run code, run (also, repls)
  (lookup +docsets)              ; navigate your code and its documentation
  (lsp +peek)               ; M-x vscode
@@ -67,7 +67,7 @@
 
  :lang
  emacs-lisp        ; drown in parentheses
- (go +lsp)
+ ;;(go +lsp)
  (haskell +lsp)    ; a language that's lazier than I am
  (json +lsp)              ; At least it ain't XML
  javascript        ; all(hope(abandon(ye(who(enter(here))))))
@@ -76,7 +76,7 @@
  (nix +tree-sitter +lsp)               ; I hereby declare "nix geht mehr!"
  (org +dragndrop +pomodoro +pandoc +roam2)               ; organize your plain life in plain text
  ;;plantuml          ; diagrams for confusing people more
- (python +lsp +pyright +tree-sitter)            ; beautiful is better than ugly
+ (python +lsp +pyright +tree-sitter +poetry)            ; beautiful is better than ugly
  (rust +lsp +tree-sitter)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
  (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
  web               ; the tubes
