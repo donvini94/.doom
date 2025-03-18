@@ -59,7 +59,6 @@
  (magit +forge)             ; a git porcelain for Emacs
  pass              ; password manager for nerds
  pdf               ; pdf enhancements
- tree-sitter
 
  :os
  (:if IS-MAC macos)  ; improve compatibility with macOS
@@ -73,11 +72,11 @@
  javascript        ; all(hope(abandon(ye(who(enter(here))))))
  (latex +latexmk +cdlatex +fold +lsp)             ; writing papers in Emacs has never been so fun
  (markdown +grip)          ; writing docs for people to ignore
- (nix +tree-sitter +lsp)               ; I hereby declare "nix geht mehr!"
+ (nix)               ; I hereby declare "nix geht mehr!"
  (org +dragndrop +pomodoro +pandoc +roam2)               ; organize your plain life in plain text
  ;;plantuml          ; diagrams for confusing people more
- (python +lsp +pyright +tree-sitter +poetry)            ; beautiful is better than ugly
- (rust +lsp +tree-sitter)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
+ (python +lsp +pyright +poetry)            ; beautiful is better than ugly
+ (rust +lsp)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
  (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
  web               ; the tubes
  (yaml +lsp)              ; JSON, but readable
