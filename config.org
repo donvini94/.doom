@@ -238,18 +238,18 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
         :unnarrowed t)))
 (setq org-roam-dailies-capture-templates
       '(("d" "default" entry
-                        "* %?"
-                        :target (file+head "%<%Y-%m-%d>.org"
-"#+title: %<%Y-%m-%d %a>
-,#+filetags:
-
-,#+BEGIN: clocktable
-,#+END:
-\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]
-
-      ")
-    )
-  )
+         "* %?"
+         :target (file+head "%<%Y-%m-%d>.org"
+                           "#+title: %<%Y-%m-%d %a>\n#+filetags:\n\n#+BEGIN: clocktable\n#+END:\n\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]\n\n* Daily Review\n** Achievement Review [0/3]\n - [ ] What did I accomplish today?\n - [ ] What went well today?\n - [ ] What's my biggest win?\n\n** Progress Tracking [0/4]\n - [ ] Career Goal Progress: [Rating 1-10] \n   - Notes:\n - [ ] Financial Goal Progress: [Rating 1-10]\n   - Notes:\n - [ ] Personal Development Progress: [Rating 1-10]\n   - Notes:\n - [ ] Health Goal Progress: [Rating 1-10]\n   - Notes:\n\n** Learning & Insights\n - What did I learn today?\n - What could I have done better?\n\n** Tomorrow's Priorities\n - Priority 1:\n - Priority 2:\n - Priority 3:"))
+        ("w" "weekly" entry
+         "* Weekly Review: Week %<%U>"
+         :target (file+head "weekly/W%<%V_%Y>.org"
+                           "#+title: Weekly Review: %<%Y-W%V>\n#+filetags: :weekly_review:\n\n* Achievement Review\n** Completed Tasks This Week\n%?\n** Major Milestones/Wins\n- \n** Missed Tasks/Opportunities\n- \n\n* Goal Progress Analysis\n** Career\n- Progress: [Rating 1-10]\n- Key accomplishments:\n- Challenges:\n- Next week's focus:\n\n** Financial\n- Savings this week:\n- Progress toward monthly goal: \n- Unexpected expenses:\n- Next week's financial priority:\n\n** Personal Development\n- Books/articles read:\n- Skills practiced:\n- Progress: [Rating 1-10]\n- Next week's focus:\n\n** Health\n- Workout consistency: [Rating 1-10]\n- Sleep quality: [Rating 1-10]\n- Nutrition quality: [Rating 1-10]\n- Next week's health priority:\n\n* Environmental Assessment\n** Changes/New Developments\n- \n** New Opportunities\n- \n** New Challenges\n- \n\n* Next Week\n** Top 3 Priorities\n1. \n2. \n3. \n\n** Specific Action Steps\n- [ ] \n- [ ] \n- [ ] \n\n* Vision Alignment Check\nAm I still aligned with my Vision 2028? [Yes/No]\nNotes:"))
+        ("m" "monthly" entry
+         "* Monthly Review: %<%B %Y>"
+         :target (file+head "monthly/M%<%m_%Y>.org"
+                           "#+title: Monthly Review: %<%B %Y>\n#+filetags: :monthly_review:\n\n* Month Overview\n%?\n** Key highlights:\n- \n** Challenges:\n- \n\n* Achievement Review\n** Monthly Goals Completed\n- \n** Monthly Goals Not Completed\n- \n** Unexpected Achievements\n- \n\n* Goal Progress Tracking\n** Career \n- Progress: [Rating 1-10]\n- Key accomplishments:\n- Learning/growth areas:\n- Relationships built:\n- Skills developed:\n- Next month's focus:\n\n** Financial\n- Monthly income:\n- Monthly expenses:\n- Savings rate: \n- Progress toward yearly goal (%):\n- Next month's financial priority:\n\n** Personal Development\n- Books completed:\n- Courses/training completed:\n- New skills practiced:\n- Habits built/maintained:\n- Areas needing improvement:\n- Next month's focus:\n\n** Health\n- Weight/body composition changes:\n- Strength/fitness improvements:\n- Sleep metrics:\n- Energy levels:\n- Areas needing attention:\n- Next month's health priority:\n\n* Resource Evaluation\n** What resources do I need to achieve next month's goals?\n- \n** What relationships should I nurture?\n- \n** What training/learning do I need?\n- \n\n* Vision Alignment Check\n** Progress toward 3-year vision:\n- Career: [Rating 1-10]\n- Financial: [Rating 1-10]\n- Personal Development: [Rating 1-10]\n- Social: [Rating 1-10]\n- Health: [Rating 1-10]\n\n** Adjustments needed to vision or approach:\n- \n\n* Quarter Planning (if applicable)\n** Quarter goals and focus areas:\n-"))
+      )
 ))
 #+end_src
 ** Org Pomodoro Statusbar
@@ -609,22 +609,23 @@ https://github.com/seagle0128/doom-modeline
 
       ;; debug
       :prefix ("dd" . "Debug")
-      :desc "dap debug recent"  "r" #'dap-debug-recent
-      :desc "dap debug last"    "l" #'dap-debug-last
+     ;; :desc "dap debug recent"  "r" #'dap-debug-recent
+     ;; :desc "dap debug last"    "l" #'dap-debug-last
 
       ;; eval
-      :prefix ("de" . "Eval")
-      :desc "eval"                "e" #'dap-eval
-      :desc "eval region"         "r" #'dap-eval-region
-      :desc "eval thing at point" "s" #'dap-eval-thing-at-point
-      :desc "add expression"      "a" #'dap-ui-expressions-add
-      :desc "remove expression"   "d" #'dap-ui-expressions-remove
+     ;; :prefix ("de" . "Eval")
+     ;; :desc "eval"                "e" #'dap-eval
+     ;; :desc "eval region"         "r" #'dap-eval-region
+     ;; :desc "eval thing at point" "s" #'dap-eval-thing-at-point
+     ;; :desc "add expression"      "a" #'dap-ui-expressions-add
+     ;; :desc "remove expression"   "d" #'dap-ui-expressions-remove
 
-      :prefix ("db" . "Breakpoint")
-      :desc "dap breakpoint toggle"      "b" #'dap-breakpoint-toggle
-      :desc "dap breakpoint condition"   "c" #'dap-breakpoint-condition
-      :desc "dap breakpoint hit count"   "h" #'dap-breakpoint-hit-condition
-      :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message)
+     ;; :prefix ("db" . "Breakpoint")
+     ;; :desc "dap breakpoint toggle"      "b" #'dap-breakpoint-toggle
+     ;; :desc "dap breakpoint condition"   "c" #'dap-breakpoint-condition
+     ;; :desc "dap breakpoint hit count"   "h" #'dap-breakpoint-hit-condition
+     ;; :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message
+)
 
 #+end_src
 * Japanese
