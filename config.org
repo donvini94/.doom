@@ -237,7 +237,7 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
         :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
         :unnarrowed t)))
 (setq org-roam-dailies-capture-templates
-      '(("d" "default" entry
+      '(("d" "daily" entry
          "* %?"
          :target (file+head "%<%Y-%m-%d>.org"
                            "#+title: %<%Y-%m-%d %a>\n#+filetags:\n\n#+BEGIN: clocktable\n#+END:\n\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]\n\n* Daily Review\n** Achievement Review [0/3]\n - [ ] What did I accomplish today?\n - [ ] What went well today?\n - [ ] What's my biggest win?\n\n** Progress Tracking [0/4]\n - [ ] Career Goal Progress: [Rating 1-10] \n   - Notes:\n - [ ] Financial Goal Progress: [Rating 1-10]\n   - Notes:\n - [ ] Personal Development Progress: [Rating 1-10]\n   - Notes:\n - [ ] Health Goal Progress: [Rating 1-10]\n   - Notes:\n\n** Learning & Insights\n - What did I learn today?\n - What could I have done better?\n\n** Tomorrow's Priorities\n - Priority 1:\n - Priority 2:\n - Priority 3:"))
