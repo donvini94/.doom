@@ -16,7 +16,7 @@
 ** Defaults
 #+begin_src emacs-lisp
 (setq user-full-name "Vincenzo Pace"
-      user-mail-address "vincenzo.pace94@icloud.com")
+      user-mail-address "pace@amiconsult.de")
 
 (display-battery-mode 1)
 (setq-default
@@ -42,6 +42,8 @@
 (defadvice! prompt-for-buffer (&rest _)
   :after '(evil-window-split evil-window-vsplit)
   (consult-buffer))
+(setq mac-command-modifier 'control)
+(setq mac-control-modifier 'super)
 #+end_src
 ** Company
 #+begin_src emacs-lisp
@@ -360,17 +362,6 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
           (org-agenda-entry-types '(:closed))))))
 
 #+end_src
-* Packages
-** Leetcode
-#+begin_src emacs-lisp
-(setq leetcode-prefer-language "rust")
-(setq leetcode-save-solutions t)
-(setq leetcode-directory "~/code/leetcode")
-#+end_src
-** vterm
-#+begin_src emacs-lisp
-(setq vterm-shell "/etc/profiles/per-user/vincenzo/bin/nu")
-#+end_src
 * Nix
 #+begin_src emacs-lisp
 ;(use-package lsp-nix
@@ -556,25 +547,6 @@ https://github.com/seagle0128/doom-modeline
 ;;(add-hook 'after-change-major-mode-hook #'doom-modeline-conditional-buffer-encoding)
 #+end_src
 
-* COPILOT
-#+begin_src emacs-lisp
-;(use-package! copilot
-;  :hook (prog-mode . copilot-mode)
-;  :bind (:map copilot-completion-map
-;              ("<tab>" . 'copilot-accept-completion)
-;              ("TAB" . 'copilot-accept-completion)
-;              ("C-TAB" . 'copilot-accept-completion-by-word)
-;              ("C-<tab>" . 'copilot-accept-completion-by-word)
-;              ("C-n" . 'copilot-next-completion)
-;              ("C-p" . 'copilot-previous-completion))
-;
-;  :config
-;  (add-to-list 'copilot-indentation-alist '(prog-mode 2))
-;  (add-to-list 'copilot-indentation-alist '(python-mode 2))
-;  (add-to-list 'copilot-indentation-alist '(closure-mode 2))
-;  (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
-#+end_src
-*
 * DEBUGGER
 #+begin_src emacs-lisp
 (with-venv
@@ -627,11 +599,4 @@ https://github.com/seagle0128/doom-modeline
      ;; :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message
 )
 
-#+end_src
-* Japanese
-#+begin_src emacs-lisp
-(setq fcitx-use-dbus nil
-      fcitx-remote-command "fcitx5-remote")
-;;(setq fcitx-use-dbus "fcitx5")
-(fcitx-aggressive-setup)
 #+end_src

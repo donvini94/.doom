@@ -70,7 +70,7 @@
  (haskell +lsp)    ; a language that's lazier than I am
  (json +lsp)              ; At least it ain't XML
  javascript        ; all(hope(abandon(ye(who(enter(here))))))
- (latex +latexmk +cdlatex +fold +lsp)             ; writing papers in Emacs has never been so fun
+;; (latex +latexmk +cdlatex +fold +lsp)             ; writing papers in Emacs has never been so fun
  (markdown +grip)          ; writing docs for people to ignore
  (nix)               ; I hereby declare "nix geht mehr!"
  (org +dragndrop +pomodoro +pandoc +roam2)               ; organize your plain life in plain text

@@ -14,11 +14,6 @@
 (package! dashboard)
 (package! org-modern
   :recipe (:host github :repo "minad/org-modern"))
-(package! copilot
-  :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
 (package! modus-themes)
-(package! leetcode)
 (package! org-super-agenda)
-(package! wakatime-mode)
-(package! fcitx)
 (package! with-venv)

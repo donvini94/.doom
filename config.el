@@ -1,6 +1,6 @@
 ;; [[file:config.org::*Defaults][Defaults:1]]
 (setq user-full-name "Vincenzo Pace"
-      user-mail-address "vincenzo.pace94@icloud.com")
+      user-mail-address "pace@amiconsult.de")
 
 (display-battery-mode 1)
 (setq-default
@@ -26,6 +26,8 @@
 (defadvice! prompt-for-buffer (&rest _)
   :after '(evil-window-split evil-window-vsplit)
   (consult-buffer))
+(setq mac-command-modifier 'control)
+(setq mac-control-modifier 'super)
 ;; Defaults:1 ends here
 
 ;; [[file:config.org::*Company][Company:1]]
@@ -320,16 +322,6 @@
           (org-agenda-entry-types '(:closed))))))
 ;; Org agenda:1 ends here
 
-;; [[file:config.org::*Leetcode][Leetcode:1]]
-(setq leetcode-prefer-language "rust")
-(setq leetcode-save-solutions t)
-(setq leetcode-directory "~/code/leetcode")
-;; Leetcode:1 ends here
-
-;; [[file:config.org::*vterm][vterm:1]]
-(setq vterm-shell "/etc/profiles/per-user/vincenzo/bin/nu")
-;; vterm:1 ends here
-
 ;; [[file:config.org::*Nix][Nix:1]]
 ;(use-package lsp-nix
 ;  :ensure lsp-mode
@@ -435,24 +427,6 @@
 ;;(add-hook 'after-change-major-mode-hook #'doom-modeline-conditional-buffer-encoding)
 ;; MODELINE:1 ends here
 
-;; [[file:config.org::*COPILOT][COPILOT:1]]
-;(use-package! copilot
-;  :hook (prog-mode . copilot-mode)
-;  :bind (:map copilot-completion-map
-;              ("<tab>" . 'copilot-accept-completion)
-;              ("TAB" . 'copilot-accept-completion)
-;              ("C-TAB" . 'copilot-accept-completion-by-word)
-;              ("C-<tab>" . 'copilot-accept-completion-by-word)
-;              ("C-n" . 'copilot-next-completion)
-;              ("C-p" . 'copilot-previous-completion))
-;
-;  :config
-;  (add-to-list 'copilot-indentation-alist '(prog-mode 2))
-;  (add-to-list 'copilot-indentation-alist '(python-mode 2))
-;  (add-to-list 'copilot-indentation-alist '(closure-mode 2))
-;  (add-to-list 'copilot-indentation-alist '(emacs-lisp-mode 2)))
-;; COPILOT:1 ends here
-
 ;; [[file:config.org::*DEBUGGER][DEBUGGER:1]]
 (with-venv
   (executable-find "python"))
@@ -504,10 +478,3 @@
      ;; :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message
 )
 ;; DEBUGGER:1 ends here
-
-;; [[file:config.org::*Japanese][Japanese:1]]
-(setq fcitx-use-dbus nil
-      fcitx-remote-command "fcitx5-remote")
-;;(setq fcitx-use-dbus "fcitx5")
-(fcitx-aggressive-setup)
-;; Japanese:1 ends here
