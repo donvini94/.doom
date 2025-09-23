@@ -2,7 +2,7 @@
 
 (doom!
  :completion
- (company +childframe)             ; the ultimate code completion backend
+ (corfu +icons +orderless)             ; the ultimate code completion backend
  (vertico +icons)           ; the search engine of the future
 
  :input
@@ -32,6 +32,7 @@
  (format +onsave)  ; automated prettiness
  snippets          ; my elves. They type so I don't have to
  word-wrap         ; soft wrapping with language-aware indent
+ rotate-text
 
  :emacs
  (dired +dirvish +icons)             ; making dired pretty [functional]
@@ -57,8 +58,9 @@
  (lookup +docsets)              ; navigate your code and its documentation
  (lsp +peek)               ; M-x vscode
  (magit +forge)             ; a git porcelain for Emacs
- pass              ; password manager for nerds
+ (pass +auth)              ; password manager for nerds
  pdf               ; pdf enhancements
+ tree-sitter
 
  :os
  (:if IS-MAC macos)  ; improve compatibility with macOS
@@ -66,21 +68,20 @@
 
  :lang
  emacs-lisp        ; drown in parentheses
- ;;(go +lsp)
- (haskell +lsp)    ; a language that's lazier than I am
+ (haskell +lsp +tree-sitter)    ; a language that's lazier than I am
  (json +lsp)              ; At least it ain't XML
- javascript        ; all(hope(abandon(ye(who(enter(here))))))
-;; (latex +latexmk +cdlatex +fold +lsp)             ; writing papers in Emacs has never been so fun
- (markdown +grip)          ; writing docs for people to ignore
- (nix)               ; I hereby declare "nix geht mehr!"
- (org +dragndrop +pomodoro +pandoc +roam2)               ; organize your plain life in plain text
- ;;plantuml          ; diagrams for confusing people more
- (python +lsp +pyright +poetry)            ; beautiful is better than ugly
- (rust +lsp)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
+ (java +lsp +tree-sitter)
+ (javascript +tree-sitter)        ; all(hope(abandon(ye(who(enter(here))))))
+ (markdown +grip +tree-sitter)          ; writing docs for people to ignore
+ (nix +tree-sitter)               ; I hereby declare "nix geht mehr!"
+ (org +dragndrop +pomodoro +roam)               ; organize your plain life in plain text
+ (python +lsp +pyright +tree-sitter)            ; beautiful is better than ugly
+ (rust +lsp +tree-sitter)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
  (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
  web               ; the tubes
  (yaml +lsp)              ; JSON, but readable
 
  :config
  literate
- (default +bindings +smartparens))
+ (default +bindings +smartparens)
+ )

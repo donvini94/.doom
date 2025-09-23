@@ -44,13 +44,17 @@
   (consult-buffer))
 (setq mac-command-modifier 'control)
 (setq mac-control-modifier 'super)
+(add-to-list 'default-frame-alist '(undecorated . t))
+
 #+end_src
-** Company
+** Corfu
 #+begin_src emacs-lisp
-(after! company
-  (setq company-idle-delay 0
-        company-show-quick-access t
-        ))
+(after! corfu
+  (setq corfu-auto-delay 0)
+
+  ;; Disable corfu in org-mode specifically
+  (add-hook 'org-mode-hook (lambda ()
+                             (corfu-mode -1))))
 #+end_src
 
 ** Keybindings
@@ -90,6 +94,39 @@
   (kbd "f x") 'ibuffer-filter-disable
   (kbd "g h") 'ibuffer-do-kill-lines
   (kbd "g H") 'ibuffer-update)
+#+end_src
+** LSP Booster
+#+begin_src emacs-lisp
+(defun lsp-booster--advice-json-parse (old-fn &rest args)
+  "Try to parse bytecode instead of json."
+  (or
+   (when (equal (following-char) ?#)
+     (let ((bytecode (read (current-buffer))))
+       (when (byte-code-function-p bytecode)
+         (funcall bytecode))))
+   (apply old-fn args)))
+(advice-add (if (progn (require 'json)
+                       (fboundp 'json-parse-buffer))
+                'json-parse-buffer
+              'json-read)
+            :around
+            #'lsp-booster--advice-json-parse)
+
+(defun lsp-booster--advice-final-command (old-fn cmd &optional test?)
+  "Prepend emacs-lsp-booster command to lsp CMD."
+  (let ((orig-result (funcall old-fn cmd test?)))
+    (if (and (not test?)                             ;; for check lsp-server-present?
+             (not (file-remote-p default-directory)) ;; see lsp-resolve-final-command, it would add extra shell wrapper
+             lsp-use-plists
+             (not (functionp 'json-rpc-connection))  ;; native json-rpc
+             (executable-find "emacs-lsp-booster"))
+        (progn
+          (when-let ((command-from-exec-path (executable-find (car orig-result))))  ;; resolve command from exec-path (in case not found in $PATH)
+            (setcar orig-result command-from-exec-path))
+          (message "Using emacs-lsp-booster for %s!" orig-result)
+          (cons "emacs-lsp-booster" orig-result))
+      orig-result)))
+(advice-add 'lsp-resolve-final-command :around #'lsp-booster--advice-final-command)
 #+end_src
 * Look and Feel
 Emacs Dashboard is an extensible startup screen showing you recent files, bookmarks, agenda items and an Emacs banner.
@@ -251,6 +288,10 @@ This setting ensures that emacsclient always opens on *dashboard* rather than *s
          "* Monthly Review: %<%B %Y>"
          :target (file+head "monthly/M%<%m_%Y>.org"
                            "#+title: Monthly Review: %<%B %Y>\n#+filetags: :monthly_review:\n\n* Month Overview\n%?\n** Key highlights:\n- \n** Challenges:\n- \n\n* Achievement Review\n** Monthly Goals Completed\n- \n** Monthly Goals Not Completed\n- \n** Unexpected Achievements\n- \n\n* Goal Progress Tracking\n** Career \n- Progress: [Rating 1-10]\n- Key accomplishments:\n- Learning/growth areas:\n- Relationships built:\n- Skills developed:\n- Next month's focus:\n\n** Financial\n- Monthly income:\n- Monthly expenses:\n- Savings rate: \n- Progress toward yearly goal (%):\n- Next month's financial priority:\n\n** Personal Development\n- Books completed:\n- Courses/training completed:\n- New skills practiced:\n- Habits built/maintained:\n- Areas needing improvement:\n- Next month's focus:\n\n** Health\n- Weight/body composition changes:\n- Strength/fitness improvements:\n- Sleep metrics:\n- Energy levels:\n- Areas needing attention:\n- Next month's health priority:\n\n* Resource Evaluation\n** What resources do I need to achieve next month's goals?\n- \n** What relationships should I nurture?\n- \n** What training/learning do I need?\n- \n\n* Vision Alignment Check\n** Progress toward 3-year vision:\n- Career: [Rating 1-10]\n- Financial: [Rating 1-10]\n- Personal Development: [Rating 1-10]\n- Social: [Rating 1-10]\n- Health: [Rating 1-10]\n\n** Adjustments needed to vision or approach:\n- \n\n* Quarter Planning (if applicable)\n** Quarter goals and focus areas:\n-"))
+        ("1" "1on1" entry
+        "* 1on1 with %^{Name} %<%U>"
+        :target (file+head "1on1s/%<%Y-%m-%d>.org"
+                        "#+title: 1on1 with %^{Name} on %<%Y-%m-%d>\n#+filetags: :1on1:\n\n* Check-In\n- Mood today: \n- Energy level: \n\n* Wins Since Last Time\n- \n\n* Challenges\n- \n\n* Support Needed\n- \n\n* Learning & Growth\n- What did you learn recently?\n- What do you want to focus on?\n\n* Feedback Exchange\n- My feedback for you:\n- Your feedback for me:\n\n* Next Steps / Commitments\n- [ ] \n- [ ] \n- [ ] \n"))
       )
 ))
 #+end_src
@@ -599,4 +640,14 @@ https://github.com/seagle0128/doom-modeline
      ;; :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message
 )
 
+#+end_src
+* Claude Code IDE
+#+begin_src emacs-lisp
+(use-package! claude-code-ide
+  :config
+  (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+
+;; Add this binding separately
+(map! :leader
+      "C" #'claude-code-ide-menu)
 #+end_src
