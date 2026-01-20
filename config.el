@@ -29,6 +29,13 @@
 (setq mac-command-modifier 'control)
 (setq mac-control-modifier 'super)
 (add-to-list 'default-frame-alist '(undecorated . t))
+
+;; Highlight symbol under cursor after a short delay
+(use-package! auto-highlight-symbol
+  :hook (prog-mode . auto-highlight-symbol-mode)
+  :config
+  (setq ahs-idle-interval 0.3)  ; delay in seconds before highlighting
+  (setq ahs-default-range 'ahs-range-whole-buffer))  ; highlight in whole buffer
 ;; Defaults:1 ends here
 
 ;; [[file:config.org::*Corfu][Corfu:1]]

@@ -69,8 +69,8 @@
  :lang
  emacs-lisp        ; drown in parentheses
  (haskell +lsp +tree-sitter)    ; a language that's lazier than I am
- (json +lsp)              ; At least it ain't XML
- (java +lsp +tree-sitter)
+ (json +lsp +tree-sitter)              ; At least it ain't XML
+ (java +meghanda +tree-sitter)
  (javascript +tree-sitter)        ; all(hope(abandon(ye(who(enter(here))))))
  (markdown +grip +tree-sitter)          ; writing docs for people to ignore
  (nix +tree-sitter)               ; I hereby declare "nix geht mehr!"
@@ -80,6 +80,7 @@
  (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
  web               ; the tubes
  (yaml +lsp)              ; JSON, but readable
+ (latex +cdlatex +fold +latexmk)
 
  :config
  literate
