@@ -590,6 +590,32 @@ It provides file previews, icons, and better navigation out of the box.
       "C" #'claude-code-ide-menu)
 #+end_src
 
+** AI Chat (gptel)
+gptel provides LLM chat in any buffer. Requires API key in ANTHROPIC_API_KEY env var or auth-sources.
+
+#+begin_src emacs-lisp
+(after! gptel
+  ;; Claude backend (API key from env or auth-sources)
+  (setq gptel-backend
+        (gptel-make-anthropic "Claude"
+          :stream t
+          :key (lambda ()
+                 (or (getenv "ANTHROPIC_API_KEY")
+                     (auth-source-pick-first-password :host "api.anthropic.com"))))
+        gptel-model 'claude-sonnet-4-20250514
+        gptel-default-mode 'org-mode))
+
+;; Keybindings
+(map! :leader
+      (:prefix ("l" . "LLM")
+       :desc "Chat buffer" "l" #'gptel
+       :desc "Send region/buffer" "RET" #'gptel-send
+       :desc "Menu" "m" #'gptel-menu
+       :desc "Add file" "f" #'gptel-add-file
+       :desc "Add buffer" "b" #'gptel-add
+       :desc "Clear context" "c" #'gptel-context-clear))
+#+end_src
+
 ** Document Reader (emacs-reader)
 Replaces pdf-tools with a modern reader supporting PDF, EPUB, MOBI, FB2, XPS, CBZ, and Office documents.
 

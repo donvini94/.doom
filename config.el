@@ -528,6 +528,29 @@
       "C" #'claude-code-ide-menu)
 ;; Claude Code IDE:1 ends here
 
+;; [[file:config.org::*AI Chat (gptel)][AI Chat (gptel):1]]
+(after! gptel
+  ;; Claude backend (API key from env or auth-sources)
+  (setq gptel-backend
+        (gptel-make-anthropic "Claude"
+          :stream t
+          :key (lambda ()
+                 (or (getenv "ANTHROPIC_API_KEY")
+                     (auth-source-pick-first-password :host "api.anthropic.com"))))
+        gptel-model 'claude-sonnet-4-20250514
+        gptel-default-mode 'org-mode))
+
+;; Keybindings
+(map! :leader
+      (:prefix ("l" . "LLM")
+       :desc "Chat buffer" "l" #'gptel
+       :desc "Send region/buffer" "RET" #'gptel-send
+       :desc "Menu" "m" #'gptel-menu
+       :desc "Add file" "f" #'gptel-add-file
+       :desc "Add buffer" "b" #'gptel-add
+       :desc "Clear context" "c" #'gptel-context-clear))
+;; AI Chat (gptel):1 ends here
+
 ;; [[file:config.org::*Document Reader (emacs-reader)][Document Reader (emacs-reader):1]]
 (use-package! reader
   :mode (("\\.pdf\\'" . reader-mode)
