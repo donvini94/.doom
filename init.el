@@ -2,28 +2,25 @@
 
 (doom!
  :completion
- (corfu +icons +orderless)             ; the ultimate code completion backend
- (vertico +icons)           ; the search engine of the future
-
- :input
- japanase
+ (corfu +icons +orderless)  ; Modern code completion
+ (vertico +icons)           ; Modern minibuffer completion
 
  :ui
  doom              ; what makes DOOM look the way it does
- ;;doom-dashboard    ; a nifty splash screen for Emacs
+ doom-dashboard    ; a nifty splash screen for Emacs
  (emoji +unicode)  ; 🙂
  hl-todo           ; highlight TODO/FIXME/NOTE/DEPRECATED/HACK/REVIEW
- (ligatures +extra)          ; ligatures and symbols to make your code pretty again
+ (ligatures +extra); ligatures and symbols to make your code pretty again
  modeline          ; snazzy, Atom-inspired modeline, plus API
  nav-flash         ; blink cursor line after big motions
- neotree           ; a project drawer, like NERDTree for vim
  ophints           ; highlight the region an operation acts on
- (popup +defaults)   ; tame sudden yet inevitable temporary windows
+ (popup +defaults) ; tame sudden yet inevitable temporary windows
  vc-gutter         ; vcs diff in the fringe
  vi-tilde-fringe   ; fringe tildes to mark beyond EOB
- (window-select +numbers)     ; visually switch windows
+ (window-select +numbers) ; visually switch windows
  workspaces        ; tab emulation, persistence & separate workspaces
  zen               ; distraction-free coding or writing
+ ;; Removed neotree - use dirvish (SPC . or SPC o -) and projectile (SPC p p) instead
 
  :editor
  (evil +everywhere); come to the dark side, we have cookies
@@ -59,7 +56,7 @@
  (lsp +peek)               ; M-x vscode
  (magit +forge)             ; a git porcelain for Emacs
  (pass +auth)              ; password manager for nerds
- pdf               ; pdf enhancements
+ ;;pdf             ; replaced by emacs-reader (supports PDF, EPUB, MOBI, etc.)
  tree-sitter
 
  :os
@@ -68,19 +65,19 @@
 
  :lang
  emacs-lisp        ; drown in parentheses
- (haskell +lsp +tree-sitter)    ; a language that's lazier than I am
- (json +lsp +tree-sitter)              ; At least it ain't XML
- (java +meghanda +tree-sitter)
- (javascript +tree-sitter)        ; all(hope(abandon(ye(who(enter(here))))))
- (markdown +grip +tree-sitter)          ; writing docs for people to ignore
- (nix +tree-sitter)               ; I hereby declare "nix geht mehr!"
- (org +dragndrop +pomodoro +roam)               ; organize your plain life in plain text
- (python +lsp +pyright +tree-sitter)            ; beautiful is better than ugly
+ (go +lsp +tree-sitter)                ; Go with gopls
+ haskell
+ (java +lsp +tree-sitter)              ; Java with jdtls
+ json
+ latex
+ markdown
+ nix
+ (org +dragndrop +pomodoro +roam)      ; organize your plain life in plain text
+ (python +lsp +pyright +tree-sitter)   ; Python with basedpyright
  (rust +lsp +tree-sitter)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
- (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
- web               ; the tubes
- (yaml +lsp)              ; JSON, but readable
- (latex +cdlatex +fold +latexmk)
+ (sh +lsp)                             ; she sells {ba,z,fi}sh shells on the C xor
+ web                                   ; the tubes
+ (yaml +lsp)                           ; JSON, but readable
 
  :config
  literate

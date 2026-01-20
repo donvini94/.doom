@@ -1,60 +1,84 @@
+;; [[file:config.org::*macOS Performance Optimizations][macOS Performance Optimizations:1]]
+(when (eq system-type 'darwin)
+  ;; Reduce the frequency of garbage collection
+  (setq gc-cons-threshold (* 100 1024 1024)  ; 100MB
+        gc-cons-percentage 0.6)
+
+  ;; Increase amount of data Emacs reads from processes (important for LSP)
+  (setq read-process-output-max (* 4 1024 1024))  ; 4MB
+
+  ;; Native compilation settings
+  (when (and (fboundp 'native-comp-available-p)
+             (native-comp-available-p))
+    (setq native-comp-async-report-warnings-errors nil
+          native-comp-deferred-compilation t))
+
+  ;; Reduce UI updates
+  (setq idle-update-delay 1.0)
+
+  ;; Optimize for long lines (prevents slowdown with minified files)
+  (setq-default bidi-paragraph-direction 'left-to-right)
+  (setq bidi-inhibit-bpa t)
+
+  ;; Use pipe for subprocess communication (faster on macOS)
+  (setq process-connection-type nil)
+
+  ;; Font caching
+  (setq inhibit-compacting-font-caches t))
+;; macOS Performance Optimizations:1 ends here
+
 ;; [[file:config.org::*Defaults][Defaults:1]]
 (setq user-full-name "Vincenzo Pace"
       user-mail-address "pace@amiconsult.de")
 
 (display-battery-mode 1)
+(display-time-mode 1)
+
 (setq-default
-      delete-by-moving-to-trash t
-      window-combination-resize t
-      x-stretch-cursor t
-      cursor-type nil
-      major-mode 'org-mode
-      history-length 1000
-      prescient-history-length 1000)
+ delete-by-moving-to-trash t
+ window-combination-resize t
+ major-mode 'org-mode
+ history-length 1000)
 
 (setq undo-limit 800000000
       evil-want-fine-undo t
-      +global-word-wrap-mode +1
       truncate-string-ellipsis "…"
       password-cache-expiry nil
-      doom-fallback-buffer-name "► Doom"
-      +doom-dashboard-name "► Doom")
-(display-time-mode 1)
+      confirm-kill-emacs nil)
+
+;; Split windows to the right and below
 (setq evil-vsplit-window-right t
       evil-split-window-below t)
 
+;; After splitting, prompt for buffer selection
 (defadvice! prompt-for-buffer (&rest _)
   :after '(evil-window-split evil-window-vsplit)
   (consult-buffer))
-(setq mac-command-modifier 'control)
-(setq mac-control-modifier 'super)
-(add-to-list 'default-frame-alist '(undecorated . t))
 
-;; Highlight symbol under cursor after a short delay
-(use-package! auto-highlight-symbol
-  :hook (prog-mode . auto-highlight-symbol-mode)
-  :config
-  (setq ahs-idle-interval 0.3)  ; delay in seconds before highlighting
-  (setq ahs-default-range 'ahs-range-whole-buffer))  ; highlight in whole buffer
+;; macOS key modifiers
+(setq mac-command-modifier 'control
+      mac-control-modifier 'super)
+
+;; Frameless window
+(add-to-list 'default-frame-alist '(undecorated . t))
 ;; Defaults:1 ends here
 
-;; [[file:config.org::*Corfu][Corfu:1]]
-(after! corfu
-  (setq corfu-auto-delay 0)
-
-  ;; Disable corfu in org-mode specifically
-  (add-hook 'org-mode-hook (lambda ()
-                             (corfu-mode -1))))
-;; Corfu:1 ends here
+;; [[file:config.org::*Which-key (faster popup)][Which-key (faster popup):1]]
+(after! which-key
+  (setq which-key-idle-delay 0.3           ; Show faster
+        which-key-idle-secondary-delay 0.05))
+;; Which-key (faster popup):1 ends here
 
 ;; [[file:config.org::*Keybindings][Keybindings:1]]
 (map! "C-c s" #'org-save-all-org-buffers)
-(after! pdf-tools
-  (map! :map pdf-view-mode-map
-        :n "h" #'pdf-annot-add-highlight-markup-annotation))
+
 (map! :leader
       :prefix "m a"
       :desc "Org download clipboard" "c" #'org-download-clipboard)
+
+;; Avy for quick jumping (use s in normal mode)
+(map! :leader
+      :desc "Avy goto char 2" "j" #'avy-goto-char-2)
 ;; Keybindings:1 ends here
 
 ;; [[file:config.org::*Keybindings within ibuffer mode][Keybindings within ibuffer mode:1]]
@@ -88,13 +112,13 @@
 (defun lsp-booster--advice-final-command (old-fn cmd &optional test?)
   "Prepend emacs-lsp-booster command to lsp CMD."
   (let ((orig-result (funcall old-fn cmd test?)))
-    (if (and (not test?)                             ;; for check lsp-server-present?
-             (not (file-remote-p default-directory)) ;; see lsp-resolve-final-command, it would add extra shell wrapper
+    (if (and (not test?)
+             (not (file-remote-p default-directory))
              lsp-use-plists
-             (not (functionp 'json-rpc-connection))  ;; native json-rpc
+             (not (functionp 'json-rpc-connection))
              (executable-find "emacs-lsp-booster"))
         (progn
-          (when-let ((command-from-exec-path (executable-find (car orig-result))))  ;; resolve command from exec-path (in case not found in $PATH)
+          (when-let ((command-from-exec-path (executable-find (car orig-result))))
             (setcar orig-result command-from-exec-path))
           (message "Using emacs-lsp-booster for %s!" orig-result)
           (cons "emacs-lsp-booster" orig-result))
@@ -102,26 +126,133 @@
 (advice-add 'lsp-resolve-final-command :around #'lsp-booster--advice-final-command)
 ;; LSP Booster:1 ends here
 
-;; [[file:config.org::*Configuring Dashboard][Configuring Dashboard:1]]
-(use-package dashboard
-  :init      ;; tweak dashboard config before loading it
-  (setq dashboard-set-heading-icons nil)
-  (setq dashboard-set-file-icons nil)
-  (setq dashboard-startup-banner "~/.config/doom/doom-emacs-dash.png")  ;; use custom image as banner
-  (setq dashboard-center-content nil) ;; set to 't' for centered content
-  (setq dashboard-items '((recents . 5)
-                          (agenda . 5 )
-                          (bookmarks . 5)
-                          (projects . 5)))
-  :config
-  (dashboard-setup-startup-hook)
-  (dashboard-modify-heading-icons '((recents . "file-text")
-                                    (bookmarks . "book"))))
-;; Configuring Dashboard:1 ends here
+;; [[file:config.org::*LSP Configuration][LSP Configuration:1]]
+(after! lsp-mode
+  ;; Performance settings
+  (setq lsp-idle-delay 0.1
+        lsp-log-io nil
+        lsp-enable-file-watchers nil
+        lsp-enable-folding nil
+        lsp-enable-text-document-color nil
+        lsp-enable-on-type-formatting nil
 
-;; [[file:config.org::*Dashboard in Emacsclient][Dashboard in Emacsclient:1]]
-(setq doom-fallback-buffer-name "*dashboard*")
-;; Dashboard in Emacsclient:1 ends here
+        ;; Reduce UI clutter
+        lsp-lens-enable nil
+        lsp-headerline-breadcrumb-enable nil
+        lsp-modeline-code-actions-enable nil
+        lsp-modeline-diagnostics-enable nil
+
+        ;; Completion settings (use corfu)
+        lsp-completion-provider :none
+        lsp-completion-show-detail t
+        lsp-completion-show-kind t))
+;; LSP Configuration:1 ends here
+
+;; [[file:config.org::*Corfu Configuration][Corfu Configuration:1]]
+(after! corfu
+  (setq corfu-auto t
+        corfu-auto-delay 0.1
+        corfu-auto-prefix 2
+        corfu-cycle t
+        corfu-preselect 'prompt
+        corfu-scroll-margin 5))
+
+;; Cape for additional completion backends
+(after! cape
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+;; Corfu Configuration:1 ends here
+
+;; [[file:config.org::*Vertico Enhancements][Vertico Enhancements:1]]
+(after! vertico
+  (setq vertico-cycle t
+        vertico-resize nil))
+
+;; Save minibuffer history
+(after! savehist
+  (setq savehist-additional-variables
+        '(search-ring regexp-search-ring)))
+;; Vertico Enhancements:1 ends here
+
+;; [[file:config.org::*Python Configuration (basedpyright)][Python Configuration (basedpyright):1]]
+(after! lsp-pyright
+  (setq lsp-pyright-langserver-command "basedpyright"
+        lsp-pyright-auto-import-completions t
+        lsp-pyright-auto-search-paths t
+        lsp-pyright-use-library-code-for-types t
+        lsp-pyright-diagnostic-mode "workspace"))
+
+(after! python
+  (setq python-shell-interpreter "python3"))
+;; Python Configuration (basedpyright):1 ends here
+
+;; [[file:config.org::*Java Configuration (JDTLS)][Java Configuration (JDTLS):1]]
+(after! lsp-java
+  (setq lsp-java-vmargs
+        '("-XX:+UseG1GC"
+          "-XX:+UseStringDeduplication"
+          "-Xmx2G"
+          "-Xms512m"))
+
+  (setq lsp-java-completion-import-order '["java" "javax" "org" "com"]
+        lsp-java-save-actions-organize-imports t
+        lsp-java-format-on-type-enabled t))
+;; Java Configuration (JDTLS):1 ends here
+
+;; [[file:config.org::*Go Configuration (gopls)][Go Configuration (gopls):1]]
+(after! go-mode
+  (setq gofmt-command "gofumpt"))
+
+(after! lsp-go
+  (setq lsp-go-analyses '((shadow . t)
+                          (unusedvariable . t)
+                          (unusedwrite . t)
+                          (useany . t))))
+;; Go Configuration (gopls):1 ends here
+
+;; [[file:config.org::*Rust Configuration][Rust Configuration:1]]
+(after! rustic
+  (setq rustic-format-on-save t
+        rustic-lsp-client 'lsp-mode))
+
+(after! lsp-rust
+  (setq lsp-rust-analyzer-cargo-watch-command "clippy"
+        lsp-rust-analyzer-display-chaining-hints t
+        lsp-rust-analyzer-display-parameter-hints t))
+;; Rust Configuration:1 ends here
+
+;; [[file:config.org::*Magit][Magit:1]]
+(after! magit
+  (setq magit-diff-refine-hunk nil))
+;; Magit:1 ends here
+
+;; [[file:config.org::*Debugger][Debugger:1]]
+(use-package dap-mode
+  :after lsp-mode
+  :commands dap-debug
+  :hook ((python-mode . dap-ui-mode) (python-mode . dap-mode))
+  :config
+  (require 'dap-python)
+  (setq dap-python-debugger 'debugpy)
+  (defun dap-python--pyenv-executable-find (command)
+    (if (bound-and-true-p pyvenv-virtual-env)
+        (executable-find "python")
+      (executable-find command)))
+
+  (add-hook 'dap-stopped-hook
+            (lambda (arg) (call-interactively #'dap-hydra))))
+
+(map! :map dap-mode-map
+      :leader
+      :prefix ("d" . "dap")
+      :desc "dap next"          "n" #'dap-next
+      :desc "dap step in"       "i" #'dap-step-in
+      :desc "dap step out"      "o" #'dap-step-out
+      :desc "dap continue"      "c" #'dap-continue
+      :desc "dap hydra"         "h" #'dap-hydra
+      :desc "dap debug restart" "r" #'dap-debug-restart
+      :desc "dap debug"         "s" #'dap-debug)
+;; Debugger:1 ends here
 
 ;; [[file:config.org::*Theming][Theming:1]]
 (setq doom-theme 'modus-vivendi)
@@ -129,53 +260,61 @@
       doom-variable-pitch-font (font-spec :family "Iosevka" :size 28)
       doom-big-font (font-spec :family "Iosevka" :size 32))
 
-
 (after! doom-themes
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t))
 
+(setq display-line-numbers-type 'relative)
 
-(setq display-line-numbers-type 'relative
-      confirm-kill-emacs nil)
-
+;; Modus themes configuration
 (use-package modus-themes
-  :ensure
   :init
-  ;; Add all your customizations prior to loading the themes
   (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs t
+        modus-themes-mixed-fonts t
+        modus-themes-org-blocks 'gray-background
+        modus-themes-headings '((1 . (variable-pitch 1.5))
+                                (2 . (variable-pitch 1.3))
+                                (3 . (variable-pitch 1.1))
+                                (t . (variable-pitch 1.0)))
         modus-themes-completions '((matches . (extrabold))
-                                  (selection . (semibold accented))
-                                  (popup . (accented intense)))
-        modus-themes-variable-pitch-headings t
-        modus-themes-scale-headings t
-        modus-themes-variable-pitch-ui t
-        modus-themes-org-agenda
-        '((header-block . (variable-pitch scale-title))
-          (header-date . (grayscale bold-all)))
-        modus-themes-org-blocks
-        '(grayscale)
-        modus-themes-mode-line
-        '(borderless)
-        modus-themes-region '(bg-only no-extend))
+                                   (selection . (semibold italic))))
   :bind ("<f5>" . modus-themes-toggle))
 ;; Theming:1 ends here
 
+;; [[file:config.org::*Modeline][Modeline:1]]
+(set-face-attribute 'mode-line nil :font "Iosevka")
+(setq doom-modeline-height 30
+      doom-modeline-bar-width 5
+      doom-modeline-persp-name t
+      doom-modeline-persp-icon t)
+;; Modeline:1 ends here
+
 ;; [[file:config.org::*General Settings][General Settings:1]]
 (setq org-directory "~/org/")
-(setq org-agenda-files
-      (append (directory-files-recursively (concat org-directory "gtd/") "\\.org$")
-              (directory-files-recursively (concat org-directory "roam/daily/") "\\.org$")
-              (directory-files-recursively (concat org-directory "roam/main/") "\\.org$")))
+
+;; Defer org-agenda-files loading
+(after! org
+  (setq org-agenda-files
+        (append (directory-files-recursively (concat org-directory "gtd/") "\\.org$")
+                (directory-files-recursively (concat org-directory "roam/daily/") "\\.org$")
+                (directory-files-recursively (concat org-directory "roam/main/") "\\.org$"))))
+
 (after! org-download
-      (setq org-download-method 'directory)
-      (setq org-download-image-dir (concat (file-name-sans-extension (buffer-file-name)) "-img"))
-      (setq org-download-image-org-width 600)
-      (setq org-download-link-format "[[file:%s]]\n"
-        org-download-abbreviate-filename-function #'file-relative-name)
-      (setq org-download-link-format-function #'org-download-link-format-function-default)
-      (setq org-download-screenshot-method "grim -g \"$(slurp)\" %s")
-        )
+  (setq org-download-method 'directory
+        org-download-image-org-width 600
+        org-download-link-format "[[file:%s]]\n"
+        org-download-abbreviate-filename-function #'file-relative-name
+        org-download-link-format-function #'org-download-link-format-function-default
+        org-download-screenshot-method "screencapture -i %s")
+  (setq org-download-image-dir
+        (lambda ()
+          (if buffer-file-name
+              (concat (file-name-sans-extension buffer-file-name) "-img")
+            "~/org/images"))))
+
 (with-eval-after-load 'org (global-org-modern-mode))
+
 (after! org
   :config
   (setq org-startup-folded t
@@ -191,9 +330,9 @@
         org-pomodoro-short-break-length 5
         org-pomodoro-long-break-length 20
         org-pomodoro-manual-break t
-        org-pomodoro-play-sounds nil )
-  (setq org-pretty-entities t)
-)
+        org-pomodoro-play-sounds nil
+        org-pretty-entities t))
+
 (setq org-todo-keywords
       '((sequence "TODO(t)" "NEXT(n)" "HOLD(h)" "|" "DONE(d)")))
 ;; General Settings:1 ends here
@@ -202,64 +341,64 @@
 (use-package! org-roam
   :after org
   :config
-    (advice-remove 'org-roam-db-query '+org-roam-try-init-db-a))
+  (advice-remove 'org-roam-db-query '+org-roam-try-init-db-a))
+
 (use-package! org-roam
-        :config
-        (setq org-roam-capture-templates
+  :config
+  (setq org-roam-capture-templates
         '(("m" "main" plain
-        "%?"
-        :if-new (file+head "main/${slug}.org"
-        "#+title: ${title}\n#+filetags:\n")
-        :immediate-finish t
-        :unnarrowed t)
+           "%?"
+           :if-new (file+head "main/${slug}.org"
+                              "#+title: ${title}\n#+filetags:\n")
+           :immediate-finish t
+           :unnarrowed t)
 
-        ("r" "reference" plain "%?"
-        :if-new
-        (file+head "reference/${slug}.org" "#+title: ${title}\n#+filetags: \n- source :: \n\n ")
-        :immediate-finish t
-        :unnarrowed t)
+          ("r" "reference" plain "%?"
+           :if-new
+           (file+head "reference/${slug}.org" "#+title: ${title}\n#+filetags: \n- source :: \n\n ")
+           :immediate-finish t
+           :unnarrowed t)
 
-        ("P" "people" plain "%?"
-        :if-new
-        (file+head "people/${slug}.org" "#+title: ${title}\n#+filetags: \n* Company\n* Contact Info\n* Job title\n ")
-        :immediate-finish t
-        :unnarrowed t)
+          ("P" "people" plain "%?"
+           :if-new
+           (file+head "people/${slug}.org" "#+title: ${title}\n#+filetags: \n* Company\n* Contact Info\n* Job title\n ")
+           :immediate-finish t
+           :unnarrowed t)
 
-        ("p" "paper" plain "%?"
-        :if-new
-        (file+head "papers/${slug}.org" "${title}\n#+filetags: :paper:\n- source ::  \n \n* TLDR \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
-        :immediate-finish t
-        :unnarrowed t)
+          ("p" "paper" plain "%?"
+           :if-new
+           (file+head "papers/${slug}.org" "${title}\n#+filetags: :paper:\n- source ::  \n \n* TLDR \n* Research Gap \n* Limitations \n* Contribution \n* Open Questions\n* Evidence\n* Other")
+           :immediate-finish t
+           :unnarrowed t)
 
-        ("M" "meeting" plain "%?"
-        :if-new
-        (file+head "meetings/%<%Y%m%d%S>-${slug}.org" "Meeting of : %t\n#+filetags: :meeting:\n")
-        :immediate-finish t
-        :unnarrowed t)
+          ("M" "meeting" plain "%?"
+           :if-new
+           (file+head "meetings/%<%Y%m%d%S>-${slug}.org" "Meeting of : %t\n#+filetags: :meeting:\n")
+           :immediate-finish t
+           :unnarrowed t)
 
-        ("b" "book notes" plain
-        "\n* Source\n\nAuthor: %^{Author}\nTitle: ${title}\nYear: %^{Year}\n\n* Summary\n\n%?"
-        :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
-        :unnarrowed t)))
-(setq org-roam-dailies-capture-templates
-      '(("d" "daily" entry
-         "* %?"
-         :target (file+head "%<%Y-%m-%d>.org"
-                           "#+title: %<%Y-%m-%d %a>\n#+filetags:\n\n#+BEGIN: clocktable\n#+END:\n\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]\n\n* Daily Review\n** Achievement Review [0/3]\n - [ ] What did I accomplish today?\n - [ ] What went well today?\n - [ ] What's my biggest win?\n\n** Progress Tracking [0/4]\n - [ ] Career Goal Progress: [Rating 1-10] \n   - Notes:\n - [ ] Financial Goal Progress: [Rating 1-10]\n   - Notes:\n - [ ] Personal Development Progress: [Rating 1-10]\n   - Notes:\n - [ ] Health Goal Progress: [Rating 1-10]\n   - Notes:\n\n** Learning & Insights\n - What did I learn today?\n - What could I have done better?\n\n** Tomorrow's Priorities\n - Priority 1:\n - Priority 2:\n - Priority 3:"))
-        ("w" "weekly" entry
-         "* Weekly Review: Week %<%U>"
-         :target (file+head "weekly/W%<%V_%Y>.org"
-                           "#+title: Weekly Review: %<%Y-W%V>\n#+filetags: :weekly_review:\n\n* Achievement Review\n** Completed Tasks This Week\n%?\n** Major Milestones/Wins\n- \n** Missed Tasks/Opportunities\n- \n\n* Goal Progress Analysis\n** Career\n- Progress: [Rating 1-10]\n- Key accomplishments:\n- Challenges:\n- Next week's focus:\n\n** Financial\n- Savings this week:\n- Progress toward monthly goal: \n- Unexpected expenses:\n- Next week's financial priority:\n\n** Personal Development\n- Books/articles read:\n- Skills practiced:\n- Progress: [Rating 1-10]\n- Next week's focus:\n\n** Health\n- Workout consistency: [Rating 1-10]\n- Sleep quality: [Rating 1-10]\n- Nutrition quality: [Rating 1-10]\n- Next week's health priority:\n\n* Environmental Assessment\n** Changes/New Developments\n- \n** New Opportunities\n- \n** New Challenges\n- \n\n* Next Week\n** Top 3 Priorities\n1. \n2. \n3. \n\n** Specific Action Steps\n- [ ] \n- [ ] \n- [ ] \n\n* Vision Alignment Check\nAm I still aligned with my Vision 2028? [Yes/No]\nNotes:"))
-        ("m" "monthly" entry
-         "* Monthly Review: %<%B %Y>"
-         :target (file+head "monthly/M%<%m_%Y>.org"
-                           "#+title: Monthly Review: %<%B %Y>\n#+filetags: :monthly_review:\n\n* Month Overview\n%?\n** Key highlights:\n- \n** Challenges:\n- \n\n* Achievement Review\n** Monthly Goals Completed\n- \n** Monthly Goals Not Completed\n- \n** Unexpected Achievements\n- \n\n* Goal Progress Tracking\n** Career \n- Progress: [Rating 1-10]\n- Key accomplishments:\n- Learning/growth areas:\n- Relationships built:\n- Skills developed:\n- Next month's focus:\n\n** Financial\n- Monthly income:\n- Monthly expenses:\n- Savings rate: \n- Progress toward yearly goal (%):\n- Next month's financial priority:\n\n** Personal Development\n- Books completed:\n- Courses/training completed:\n- New skills practiced:\n- Habits built/maintained:\n- Areas needing improvement:\n- Next month's focus:\n\n** Health\n- Weight/body composition changes:\n- Strength/fitness improvements:\n- Sleep metrics:\n- Energy levels:\n- Areas needing attention:\n- Next month's health priority:\n\n* Resource Evaluation\n** What resources do I need to achieve next month's goals?\n- \n** What relationships should I nurture?\n- \n** What training/learning do I need?\n- \n\n* Vision Alignment Check\n** Progress toward 3-year vision:\n- Career: [Rating 1-10]\n- Financial: [Rating 1-10]\n- Personal Development: [Rating 1-10]\n- Social: [Rating 1-10]\n- Health: [Rating 1-10]\n\n** Adjustments needed to vision or approach:\n- \n\n* Quarter Planning (if applicable)\n** Quarter goals and focus areas:\n-"))
-        ("1" "1on1" entry
-        "* 1on1 with %^{Name} %<%U>"
-        :target (file+head "1on1s/%<%Y-%m-%d>.org"
-                        "#+title: 1on1 with %^{Name} on %<%Y-%m-%d>\n#+filetags: :1on1:\n\n* Check-In\n- Mood today: \n- Energy level: \n\n* Wins Since Last Time\n- \n\n* Challenges\n- \n\n* Support Needed\n- \n\n* Learning & Growth\n- What did you learn recently?\n- What do you want to focus on?\n\n* Feedback Exchange\n- My feedback for you:\n- Your feedback for me:\n\n* Next Steps / Commitments\n- [ ] \n- [ ] \n- [ ] \n"))
-      )
-))
+          ("b" "book notes" plain
+           "\n* Source\n\nAuthor: %^{Author}\nTitle: ${title}\nYear: %^{Year}\n\n* Summary\n\n%?"
+           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+           :unnarrowed t)))
+
+  (setq org-roam-dailies-capture-templates
+        '(("d" "daily" entry
+           "* %?"
+           :target (file+head "%<%Y-%m-%d>.org"
+                              "#+title: %<%Y-%m-%d %a>\n#+filetags:\n\n#+BEGIN: clocktable\n#+END:\n\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]\n\n* Daily Review\n** Achievement Review [0/3]\n - [ ] What did I accomplish today?\n - [ ] What went well today?\n - [ ] What's my biggest win?\n\n** Progress Tracking [0/4]\n - [ ] Career Goal Progress: [Rating 1-10] \n   - Notes:\n - [ ] Financial Goal Progress: [Rating 1-10]\n   - Notes:\n - [ ] Personal Development Progress: [Rating 1-10]\n   - Notes:\n - [ ] Health Goal Progress: [Rating 1-10]\n   - Notes:\n\n** Learning & Insights\n - What did I learn today?\n - What could I have done better?\n\n** Tomorrow's Priorities\n - Priority 1:\n - Priority 2:\n - Priority 3:"))
+          ("w" "weekly" entry
+           "* Weekly Review: Week %<%U>"
+           :target (file+head "weekly/W%<%V_%Y>.org"
+                              "#+title: Weekly Review: %<%Y-W%V>\n#+filetags: :weekly_review:\n\n* Achievement Review\n** Completed Tasks This Week\n%?\n** Major Milestones/Wins\n- \n** Missed Tasks/Opportunities\n- \n\n* Goal Progress Analysis\n** Career\n- Progress: [Rating 1-10]\n- Key accomplishments:\n- Challenges:\n- Next week's focus:\n\n** Financial\n- Savings this week:\n- Progress toward monthly goal: \n- Unexpected expenses:\n- Next week's financial priority:\n\n** Personal Development\n- Books/articles read:\n- Skills practiced:\n- Progress: [Rating 1-10]\n- Next week's focus:\n\n** Health\n- Workout consistency: [Rating 1-10]\n- Sleep quality: [Rating 1-10]\n- Nutrition quality: [Rating 1-10]\n- Next week's health priority:\n\n* Environmental Assessment\n** Changes/New Developments\n- \n** New Opportunities\n- \n** New Challenges\n- \n\n* Next Week\n** Top 3 Priorities\n1. \n2. \n3. \n\n** Specific Action Steps\n- [ ] \n- [ ] \n- [ ] \n\n* Vision Alignment Check\nAm I still aligned with my Vision 2028? [Yes/No]\nNotes:"))
+          ("m" "monthly" entry
+           "* Monthly Review: %<%B %Y>"
+           :target (file+head "monthly/M%<%m_%Y>.org"
+                              "#+title: Monthly Review: %<%B %Y>\n#+filetags: :monthly_review:\n\n* Month Overview\n%?\n** Key highlights:\n- \n** Challenges:\n- \n\n* Achievement Review\n** Monthly Goals Completed\n- \n** Monthly Goals Not Completed\n- \n** Unexpected Achievements\n- \n\n* Goal Progress Tracking\n** Career \n- Progress: [Rating 1-10]\n- Key accomplishments:\n- Learning/growth areas:\n- Relationships built:\n- Skills developed:\n- Next month's focus:\n\n** Financial\n- Monthly income:\n- Monthly expenses:\n- Savings rate: \n- Progress toward yearly goal (%):\n- Next month's financial priority:\n\n** Personal Development\n- Books completed:\n- Courses/training completed:\n- New skills practiced:\n- Habits built/maintained:\n- Areas needing improvement:\n- Next month's focus:\n\n** Health\n- Weight/body composition changes:\n- Strength/fitness improvements:\n- Sleep metrics:\n- Energy levels:\n- Areas needing attention:\n- Next month's health priority:\n\n* Resource Evaluation\n** What resources do I need to achieve next month's goals?\n- \n** What relationships should I nurture?\n- \n** What training/learning do I need?\n- \n\n* Vision Alignment Check\n** Progress toward 3-year vision:\n- Career: [Rating 1-10]\n- Financial: [Rating 1-10]\n- Personal Development: [Rating 1-10]\n- Social: [Rating 1-10]\n- Health: [Rating 1-10]\n\n** Adjustments needed to vision or approach:\n- \n\n* Quarter Planning (if applicable)\n** Quarter goals and focus areas:\n-"))
+          ("1" "1on1" entry
+           "* 1on1 with %^{Name} %<%U>"
+           :target (file+head "1on1s/%<%Y-%m-%d>.org"
+                              "#+title: 1on1 with %^{Name} on %<%Y-%m-%d>\n#+filetags: :1on1:\n\n* Check-In\n- Mood today: \n- Energy level: \n\n* Wins Since Last Time\n- \n\n* Challenges\n- \n\n* Support Needed\n- \n\n* Learning & Growth\n- What did you learn recently?\n- What do you want to focus on?\n\n* Feedback Exchange\n- My feedback for you:\n- Your feedback for me:\n\n* Next Steps / Commitments\n- [ ] \n- [ ] \n- [ ] \n")))))
 ;; Org Roam:1 ends here
 
 ;; [[file:config.org::*Org Pomodoro Statusbar][Org Pomodoro Statusbar:1]]
@@ -268,7 +407,7 @@
   (if (org-pomodoro-active-p)
       (cl-case org-pomodoro-state
         (:pomodoro
-           (format "Pomo: %d minutes - %s" (/ (org-pomodoro-remaining-seconds) 60) org-clock-heading))
+         (format "Pomo: %d minutes - %s" (/ (org-pomodoro-remaining-seconds) 60) org-clock-heading))
         (:short-break
          (format "Short break time: %d minutes" (/ (org-pomodoro-remaining-seconds) 60)))
         (:long-break
@@ -291,53 +430,54 @@
   :commands (anki-editor-mode)
   :init
   (map! :leader
-      :desc "Anki Push tree"
-      "m a p" #'anki-editor-push-new-notes)
-  :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
-)
-;; Org-capture templates
+        :desc "Anki Push tree"
+        "m a p" #'anki-editor-push-new-notes)
+  :hook (org-capture-after-finalize . anki-editor-reset-cloze-number))
+
 (setq org-my-anki-file "~/org/anki.org")
+
 (defun my-anki-editor-mode-hook ()
   (when (string-equal (buffer-file-name) (expand-file-name "~/org/anki.org"))
     (anki-editor-mode)))
-
 (add-hook 'find-file-hook 'my-anki-editor-mode-hook)
 
 (after! org
-    (add-to-list 'org-capture-templates
-    '("a" "Anki basic"
-               entry
-               (file+headline org-my-anki-file "Dispatch Shelf")
-               "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Mega\n:END:\n** Front\n%?\n** Back\n"))
-    (add-to-list 'org-capture-templates
-             '("A" "Anki cloze"
-               entry
-               (file+headline org-my-anki-file "Dispatch Shelf")
-               "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Mega\n:END:\n** Text\n%x\n** Extra\n"))
-    (add-to-list 'org-capture-templates
-                '("g" "Game Dev Notes"
-                  entry
-                  (file+headline "~/org/my_rpg.org" "Capture")
-                   "* %?\nEntered on %U\n  %i\n  %a"))
-    (add-to-list 'org-capture-templates
-                '("r" "Reading List"
-                  entry
-                  (file+headline "~/org/reading_list.org" "Capture")
-                   "* %?Title\nby Author \n\nEntered on %U\n  %i\n  %a \n "))
-    (add-to-list 'org-capture-templates
-                '("n" "Notes"
-                  entry
-                  (file+headline "~/org/gtd/notes.org" "Capture")
-                   "* %?\n  %i\n  %a"))
-    (add-to-list 'org-capture-templates
-                '("t" "ToDo"
-                  entry
-                  (file+headline "~/org/gtd/inbox.org" "Capture")
-                   "* TODO %?\n  %i\n  %a")))
-;; Allow Emacs to access content from clipboard.
+  (add-to-list 'org-capture-templates
+               '("a" "Anki basic"
+                 entry
+                 (file+headline org-my-anki-file "Dispatch Shelf")
+                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Mega\n:END:\n** Front\n%?\n** Back\n"))
+  (add-to-list 'org-capture-templates
+               '("A" "Anki cloze"
+                 entry
+                 (file+headline org-my-anki-file "Dispatch Shelf")
+                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Mega\n:END:\n** Text\n%x\n** Extra\n"))
+  (add-to-list 'org-capture-templates
+               '("g" "Game Dev Notes"
+                 entry
+                 (file+headline "~/org/my_rpg.org" "Capture")
+                 "* %?\nEntered on %U\n  %i\n  %a"))
+  (add-to-list 'org-capture-templates
+               '("r" "Reading List"
+                 entry
+                 (file+headline "~/org/reading_list.org" "Capture")
+                 "* %?Title\nby Author \n\nEntered on %U\n  %i\n  %a \n "))
+  (add-to-list 'org-capture-templates
+               '("n" "Notes"
+                 entry
+                 (file+headline "~/org/gtd/notes.org" "Capture")
+                 "* %?\n  %i\n  %a"))
+  (add-to-list 'org-capture-templates
+               '("t" "ToDo"
+                 entry
+                 (file+headline "~/org/gtd/inbox.org" "Capture")
+                 "* TODO %?\n  %i\n  %a")))
+
+;; Clipboard access
 (setq select-enable-clipboard t
       select-enable-primary t)
 
+;; Close org-capture frame when done
 (defadvice org-capture-finalize
     (after delete-capture-frame activate)
   "Advise capture-finalize to close the frame"
@@ -351,13 +491,11 @@
       (delete-frame)))
 
 (defun make-orgcapture-frame ()
-    "Create a new frame and run org-capture."
-    (interactive)
-    (make-frame '((name . "org-capture") (window-system . x)))
-    (select-frame-by-name "org-capture")
-    (org-capture)
-    ;;(delete-other-windows)
-    )
+  "Create a new frame and run org-capture."
+  (interactive)
+  (make-frame '((name . "org-capture") (window-system . x)))
+  (select-frame-by-name "org-capture")
+  (org-capture))
 ;; Org Capture:1 ends here
 
 ;; [[file:config.org::*Org agenda][Org agenda:1]]
@@ -369,169 +507,84 @@
           (org-agenda-entry-types '(:closed))))))
 ;; Org agenda:1 ends here
 
-;; [[file:config.org::*Nix][Nix:1]]
-;(use-package lsp-nix
-;  :ensure lsp-mode
-;  :after (lsp-mode)
-;  :demand t
-;  :custom
-;  (lsp-nix-nil-formatter ["nixfmt"]))
-;
-;(use-package nix-mode
-;  :hook (nix-mode . lsp-deferred)
-;  :ensure t)
-;; Nix:1 ends here
-
-;; [[file:config.org::*File permissions and ownership][File permissions and ownership:1]]
+;; [[file:config.org::*Dired with Dirvish][Dired with Dirvish:1]]
+;; Basic dired keybindings (dirvish handles most functionality)
 (map! :leader
       (:prefix ("d" . "dired")
        :desc "Open dired" "d" #'dired
-       :desc "Dired jump to current" "j" #'dired-jump)
-      (:after dired
-       (:map dired-mode-map
-        :desc "Peep-dired image previews" "d p" #'peep-dired
-        :desc "Dired view file" "d v" #'dired-view-file)))
+       :desc "Dired jump to current" "j" #'dired-jump))
 
-(evil-define-key 'normal dired-mode-map
-  (kbd "M-RET") 'dired-display-file
-  (kbd "h") 'dired-up-directory
-  (kbd "l") 'dired-open-file ; use dired-find-file instead of dired-open.
-  (kbd "m") 'dired-mark
-  (kbd "t") 'dired-toggle-marks
-  (kbd "u") 'dired-unmark
-  (kbd "C") 'dired-do-copy
-  (kbd "D") 'dired-do-delete
-  (kbd "J") 'dired-goto-file
-  (kbd "M") 'dired-do-chmod
-  (kbd "O") 'dired-do-chown
-  (kbd "P") 'dired-do-print
-  (kbd "R") 'dired-do-rename
-  (kbd "T") 'dired-do-touch
-  (kbd "Y") 'dired-copy-filenamecopy-filename-as-kill ; copies filename to kill ring.
-  (kbd "Z") 'dired-do-compress
-  (kbd "+") 'dired-create-directory
-  (kbd "-") 'dired-do-kill-lines
-  (kbd "% l") 'dired-downcase
-  (kbd "% m") 'dired-mark-files-regexp
-  (kbd "% u") 'dired-upcase
-  (kbd "* %") 'dired-mark-files-regexp
-  (kbd "* .") 'dired-mark-extension
-  (kbd "* /") 'dired-mark-directories
-  (kbd "; d") 'epa-dired-do-decrypt
-  (kbd "; e") 'epa-dired-do-encrypt)
-;; Get file icons in dired
-;; With dired-open plugin, you can launch external programs for certain extensions
-;; For example, I set all .png files to open in 'sxiv' and all .mp4 files to open in 'mpv'
-(setq dired-open-extensions '(("gif" . "sxiv")
-                              ("jpg" . "sxiv")
-                              ("png" . "sxiv")
-                              ("mkv" . "mpv")
-                              ("mp4" . "mpv")))
-;; File permissions and ownership:1 ends here
-
-;; [[file:config.org::*Keybindings Within Dired With Peep-Dired-Mode Enabled][Keybindings Within Dired With Peep-Dired-Mode Enabled:1]]
-(evil-define-key 'normal peep-dired-mode-map
-  (kbd "j") 'peep-dired-next-file
-  (kbd "k") 'peep-dired-prev-file)
-(add-hook 'peep-dired-hook 'evil-normalize-keymaps)
-;; Keybindings Within Dired With Peep-Dired-Mode Enabled:1 ends here
-
-;; [[file:config.org::*Making deleted files go to trash can][Making deleted files go to trash can:1]]
-(setq delete-by-moving-to-trash t
-      trash-directory "~/.local/share/Trash/files/")
-;; Making deleted files go to trash can:1 ends here
-
-;; [[file:config.org::*EMOJIS][EMOJIS:1]]
-(use-package emojify
-  :hook (after-init . global-emojify-mode))
-;; EMOJIS:1 ends here
-
-;; [[file:config.org::*NEOTREE][NEOTREE:1]]
-(after! neotree
-  (setq neo-smart-open t
-        neo-window-fixed-size nil))
-(after! doom-themes
-  (setq doom-neotree-enable-variable-pitch t))
-(map! :leader
-      :desc "Toggle neotree file viewer" "t n" #'neotree-toggle
-      :desc "Open directory in neotree" "d n" #'neotree-dir)
-;; NEOTREE:1 ends here
-
-;; [[file:config.org::*MODELINE][MODELINE:1]]
-(set-face-attribute 'mode-line nil :font "Iosevka")
-(setq doom-modeline-height 30     ;; sets modeline height
-      doom-modeline-bar-width 5   ;; sets right bar width
-      doom-modeline-persp-name t  ;; adds perspective name to modeline
-      doom-modeline-persp-icon t) ;; adds folder icon next to persp name
-(defun doom-modeline-conditional-buffer-encoding ()
-  "We expect the encoding to be LF UTF-8, so only show the modeline when this is not the case"
-  (setq-local doom-modeline-buffer-encoding
-              (unless (and (memq (plist-get (coding-system-plist buffer-file-coding-system) :category)
-                                 '(coding-category-undecided coding-category-utf-8))
-                           (not (memq (coding-system-eol-type buffer-file-coding-system) '(1 2))))
-                t)))
-
-;;(add-hook 'after-change-major-mode-hook #'doom-modeline-conditional-buffer-encoding)
-;; MODELINE:1 ends here
-
-;; [[file:config.org::*DEBUGGER][DEBUGGER:1]]
-(with-venv
-  (executable-find "python"))
-  (use-package dap-mode
-  :after lsp-mode
-  :commands dap-debug
-  :hook ((python-mode . dap-ui-mode) (python-mode . dap-mode))
-  :config
-  (require 'dap-python)
-  (setq dap-python-debugger 'debugpy)
-  (defun dap-python--pyenv-executable-find (command)
-    (with-venv (executable-find "python")))
-
-  (add-hook 'dap-stopped-hook
-            (lambda (arg) (call-interactively #'dap-hydra))))
-
-(after! dap-mode
-  (setq dap-python-debugger 'debugpy))
-
-(map! :map dap-mode-map
-      :leader
-      :prefix ("d" . "dap")
-      ;; basics
-      :desc "dap next"          "n" #'dap-next
-      :desc "dap step in"       "i" #'dap-step-in
-      :desc "dap step out"      "o" #'dap-step-out
-      :desc "dap continue"      "c" #'dap-continue
-      :desc "dap hydra"         "h" #'dap-hydra
-      :desc "dap debug restart" "r" #'dap-debug-restart
-      :desc "dap debug"         "s" #'dap-debug
-
-      ;; debug
-      :prefix ("dd" . "Debug")
-     ;; :desc "dap debug recent"  "r" #'dap-debug-recent
-     ;; :desc "dap debug last"    "l" #'dap-debug-last
-
-      ;; eval
-     ;; :prefix ("de" . "Eval")
-     ;; :desc "eval"                "e" #'dap-eval
-     ;; :desc "eval region"         "r" #'dap-eval-region
-     ;; :desc "eval thing at point" "s" #'dap-eval-thing-at-point
-     ;; :desc "add expression"      "a" #'dap-ui-expressions-add
-     ;; :desc "remove expression"   "d" #'dap-ui-expressions-remove
-
-     ;; :prefix ("db" . "Breakpoint")
-     ;; :desc "dap breakpoint toggle"      "b" #'dap-breakpoint-toggle
-     ;; :desc "dap breakpoint condition"   "c" #'dap-breakpoint-condition
-     ;; :desc "dap breakpoint hit count"   "h" #'dap-breakpoint-hit-condition
-     ;; :desc "dap breakpoint log message" "l" #'dap-breakpoint-log-message
-)
-;; DEBUGGER:1 ends here
+;; Trash handling on macOS
+(when (eq system-type 'darwin)
+  (setq trash-directory nil))  ; Use system default
+;; Dired with Dirvish:1 ends here
 
 ;; [[file:config.org::*Claude Code IDE][Claude Code IDE:1]]
 (use-package! claude-code-ide
   :config
-  (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+  (claude-code-ide-emacs-tools-setup))
 
-;; Add this binding separately
 (map! :leader
       "C" #'claude-code-ide-menu)
 ;; Claude Code IDE:1 ends here
+
+;; [[file:config.org::*Document Reader (emacs-reader)][Document Reader (emacs-reader):1]]
+(use-package! reader
+  :mode (("\\.pdf\\'" . reader-mode)
+         ("\\.epub\\'" . reader-mode)
+         ("\\.mobi\\'" . reader-mode)
+         ("\\.fb2\\'" . reader-mode)
+         ("\\.xps\\'" . reader-mode)
+         ("\\.cbz\\'" . reader-mode)
+         ("\\.odt\\'" . reader-mode)
+         ("\\.docx\\'" . reader-mode)
+         ("\\.pptx\\'" . reader-mode)
+         ("\\.xlsx\\'" . reader-mode))
+  :config
+  ;; Suppress the EmacsWinState warning on startup
+  (advice-add 'reader-current-doc-pagenumber :around
+              (lambda (fn &rest args)
+                (ignore-errors (apply fn args))))
+
+  ;; Fix page counter not updating - use post-command-hook for reliable updates
+  (defun my/reader-update-modeline ()
+    "Update modeline in reader-mode after commands."
+    (when (eq major-mode 'reader-mode)
+      (force-mode-line-update t)))
+
+  (add-hook 'reader-mode-hook
+            (lambda ()
+              (add-hook 'post-command-hook #'my/reader-update-modeline nil t)))
+
+  ;; NOTE: reader-dark-mode works but toggling back to light crashes Emacs (native code bug)
+
+  ;; Use evil keybindings in reader-mode
+  (evil-set-initial-state 'reader-mode 'normal)
+
+  ;; Evil-friendly navigation (package defaults: n/p for pages, H/W for fit)
+  (map! :map reader-mode-map
+        :n "j" #'reader-scroll-down-or-next-page
+        :n "k" #'reader-scroll-up-or-prev-page
+        :n "h" #'reader-scroll-left
+        :n "l" #'reader-scroll-right
+        :n "gg" #'reader-first-page
+        :n "G" #'reader-last-page
+        :n "+" #'reader-enlarge-size
+        :n "-" #'reader-shrink-size
+        :n "0" #'reader-reset-size
+        :n "W" #'reader-fit-to-width
+        :n "H" #'reader-fit-to-height
+        :n ":" #'reader-goto-page
+        :n "q" #'quit-window
+        :n "Q" #'reader-close-doc))
+
+;; Handle old pdf-view bookmarks - redirect to reader
+(defun my/pdf-view-bookmark-jump-handler (bookmark)
+  "Handle old pdf-view bookmarks by opening in reader-mode."
+  (let ((file (bookmark-get-filename bookmark)))
+    (when (and file (file-exists-p file))
+      (find-file file))))
+
+(with-eval-after-load 'bookmark
+  (fset 'pdf-view-bookmark-jump-handler #'my/pdf-view-bookmark-jump-handler))
+;; Document Reader (emacs-reader):1 ends here

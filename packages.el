@@ -1,22 +1,38 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; $DOOMDIR/packages.el
 
-(package! deadgrep)
-(package! org-clock-convenience)
+;; Org enhancements
 (package! anki-editor
   :recipe (:host github :repo "anki-editor/anki-editor"))
 (package! org-auto-tangle)
-(package! dired-open)
-(package! dired-subtree)
-(package! peep-dired)
-(package! emojify)
-(package! csv-mode)
-(package! dashboard)
 (package! org-modern
   :recipe (:host github :repo "minad/org-modern"))
+(package! org-clock-convenience)
+
+;; Themes
 (package! modus-themes)
-(package! org-super-agenda)
-(package! with-venv)
-(package! auto-highlight-symbol)
+
+;; Utilities
+(package! csv-mode)
 (package! claude-code-ide
   :recipe (:host github :repo "manzaltu/claude-code-ide.el"))
+
+;; Document reader (replaces pdf-tools, also handles EPUB, MOBI, etc.)
+(package! reader
+  :recipe (:host nil
+           :type git
+           :repo "https://codeberg.org/divyaranjan/emacs-reader"
+           :files ("*.el" "render-core.dylib")
+           :pre-build ("make" "all")))
+
+;; Disable pdf-tools and related packages since reader replaces them
+(package! pdf-tools :disable t)
+(package! org-pdftools :disable t)
+(package! saveplace-pdf-view :disable t)
+
+;; REMOVED:
+;; - deadgrep: consult-ripgrep (SPC s p) replaces this
+;; - emojify: Doom's :ui emoji module handles this
+;; - dashboard: using Doom's built-in dashboard instead
+;; - dired-open, dired-subtree, peep-dired: dirvish replaces all of these
+;; - org-super-agenda, auto-highlight-symbol: were never configured
