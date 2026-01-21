@@ -223,7 +223,22 @@
 
 ;; [[file:config.org::*Magit][Magit:1]]
 (after! magit
-  (setq magit-diff-refine-hunk nil))
+  ;; Use homebrew git (faster than Apple git)
+  (setq magit-git-executable "/opt/homebrew/bin/git")
+
+  ;; Reduce startup overhead
+  (setq magit-refresh-status-buffer t          ; Keep enabled but optimize below
+        magit-diff-refine-hunk nil             ; Disable word-granularity diff
+        magit-diff-highlight-indentation nil
+        magit-diff-highlight-trailing nil
+        magit-diff-paint-whitespace nil)
+
+  ;; Show less data initially
+  (setq magit-log-section-commit-count 20)     ; Fewer commits in status
+
+  ;; Faster remotes
+  (setq magit-clone-default-directory "~/code/")
+  (setq auto-revert-buffer-list-filter 'magit-auto-revert-repository-buffer-p))
 ;; Magit:1 ends here
 
 ;; [[file:config.org::*Debugger][Debugger:1]]

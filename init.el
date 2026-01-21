@@ -54,7 +54,7 @@
  (eval +overlay)     ; run code, run (also, repls)
  (lookup +docsets)              ; navigate your code and its documentation
  (lsp +peek)               ; M-x vscode
- (magit +forge)             ; a git porcelain for Emacs
+ magit              ; a git porcelain for Emacs
  (pass +auth)              ; password manager for nerds
  ;;pdf             ; replaced by emacs-reader (supports PDF, EPUB, MOBI, etc.)
  tree-sitter
