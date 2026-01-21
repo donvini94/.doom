@@ -16,6 +16,7 @@
 (package! csv-mode)
 (package! claude-code-ide
   :recipe (:host github :repo "manzaltu/claude-code-ide.el"))
+(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))
 
 ;; Document reader (replaces pdf-tools, also handles EPUB, MOBI, etc.)
 (package! reader
@@ -30,9 +31,3 @@
 (package! org-pdftools :disable t)
 (package! saveplace-pdf-view :disable t)
 
-;; REMOVED:
-;; - deadgrep: consult-ripgrep (SPC s p) replaces this
-;; - emojify: Doom's :ui emoji module handles this
-;; - dashboard: using Doom's built-in dashboard instead
-;; - dired-open, dired-subtree, peep-dired: dirvish replaces all of these
-;; - org-super-agenda, auto-highlight-symbol: were never configured

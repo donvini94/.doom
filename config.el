@@ -1,31 +1,58 @@
-;; [[file:config.org::*macOS Performance Optimizations][macOS Performance Optimizations:1]]
+;; [[file:config.org::*Performance Optimizations][Performance Optimizations:1]]
+;; === Garbage Collection (works with Doom's gcmh) ===
+;; Doom uses gcmh which sets high threshold during activity, low when idle.
+;; We increase the high threshold and tune gc-cons-percentage.
+(after! gcmh
+  (setq gcmh-high-cons-threshold (* 128 1024 1024)  ; 128MB during activity
+        gcmh-idle-delay 'auto                        ; Auto-tune idle delay
+        gc-cons-percentage 0.2))                     ; 20% (research suggests this helps)
+
+;; === Process Communication ===
+(setq read-process-output-max (* 4 1024 1024))       ; 4MB for LSP/subprocess
+
+;; === Display & Redisplay Performance ===
+(setq fast-but-imprecise-scrolling t                 ; Faster scrolling, may be slightly imprecise
+      redisplay-skip-fontification-on-input t        ; Skip fontification when typing
+      jit-lock-defer-time 0                          ; Fontify immediately when idle
+      idle-update-delay 1.0)                         ; Reduce UI update frequency
+
+;; === Scrolling Smoothness ===
+(setq scroll-conservatively 101                      ; Never recenter point
+      scroll-margin 2                                ; Keep 2 lines of context
+      scroll-preserve-screen-position t              ; Keep point position on scroll
+      auto-window-vscroll nil)                       ; Disable auto vertical scroll for tall lines
+
+;; === Bidirectional Text (most users don't need RTL) ===
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)                            ; Disable bidirectional parenthesis algorithm
+
+;; === Font & Display Caching ===
+(setq inhibit-compacting-font-caches t)              ; Don't compact fonts (uses more memory)
+
+;; === Native Compilation ===
+(when (native-comp-available-p)
+  (setq native-comp-async-report-warnings-errors nil ; Silence async compilation warnings
+        native-comp-deferred-compilation t           ; Compile in background
+        native-comp-speed 2))                        ; Optimization level (2 = max safe)
+
+;; === File Handling ===
+(setq vc-handled-backends '(Git)                     ; Only check for Git (faster than checking all VCS)
+      vc-follow-symlinks t)                          ; Don't prompt about symlinks
+
+;; === macOS Specific ===
 (when (eq system-type 'darwin)
-  ;; Reduce the frequency of garbage collection
-  (setq gc-cons-threshold (* 100 1024 1024)  ; 100MB
-        gc-cons-percentage 0.6)
+  (setq process-connection-type nil                  ; Use pipe for subprocess communication
+        ns-use-native-fullscreen nil                 ; Faster fullscreen
+        frame-resize-pixelwise t))                   ; Smooth frame resizing
 
-  ;; Increase amount of data Emacs reads from processes (important for LSP)
-  (setq read-process-output-max (* 4 1024 1024))  ; 4MB
+;; === So-long Mode (handles minified/long-line files) ===
+(global-so-long-mode 1)
 
-  ;; Native compilation settings
-  (when (and (fboundp 'native-comp-available-p)
-             (native-comp-available-p))
-    (setq native-comp-async-report-warnings-errors nil
-          native-comp-deferred-compilation t))
-
-  ;; Reduce UI updates
-  (setq idle-update-delay 1.0)
-
-  ;; Optimize for long lines (prevents slowdown with minified files)
-  (setq-default bidi-paragraph-direction 'left-to-right)
-  (setq bidi-inhibit-bpa t)
-
-  ;; Use pipe for subprocess communication (faster on macOS)
-  (setq process-connection-type nil)
-
-  ;; Font caching
-  (setq inhibit-compacting-font-caches t))
-;; macOS Performance Optimizations:1 ends here
+;; === Auto-revert (reduce polling) ===
+(setq auto-revert-interval 3                         ; Check every 3 seconds instead of 5
+      auto-revert-check-vc-info nil                  ; Don't check VC info on revert
+      global-auto-revert-non-file-buffers nil)       ; Only revert file buffers
+;; Performance Optimizations:1 ends here
 
 ;; [[file:config.org::*Defaults][Defaults:1]]
 (setq user-full-name "Vincenzo Pace"
