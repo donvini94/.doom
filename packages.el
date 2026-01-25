@@ -18,7 +18,8 @@
 (package! claude-code-ide
   :recipe (:host github :repo "manzaltu/claude-code-ide.el"))
 (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))
-
+(package! devcontainer
+  :recipe (:host github :repo "johannes-mueller/devcontainer.el"))
 ;; Document reader (replaces pdf-tools, also handles EPUB, MOBI, etc.)
 (package! reader
   :recipe (:host nil
