@@ -14,6 +14,7 @@
 
 ;; Utilities
 (package! csv-mode)
+(package! ultra-scroll)  ; ~40% faster than pixel-scroll-precision-mode
 (package! claude-code-ide
   :recipe (:host github :repo "manzaltu/claude-code-ide.el"))
 (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))

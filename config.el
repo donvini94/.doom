@@ -162,17 +162,29 @@
         lsp-enable-folding nil
         lsp-enable-text-document-color nil
         lsp-enable-on-type-formatting nil
-
-        ;; Reduce UI clutter
-        lsp-lens-enable nil
-        lsp-headerline-breadcrumb-enable nil
-        lsp-modeline-code-actions-enable nil
-        lsp-modeline-diagnostics-enable nil
-
+        
         ;; Completion settings (use corfu)
         lsp-completion-provider :none
         lsp-completion-show-detail t
         lsp-completion-show-kind t))
+
+(after! lsp-mode
+  ;; Enable code lenses (inline clickable annotations)
+  (setq lsp-lens-enable t)
+  
+  ;; Enable breadcrumb (shows class > method hierarchy)
+  (setq lsp-headerline-breadcrumb-enable t)
+  (setq lsp-headerline-breadcrumb-segments '(symbols))
+  
+  ;; Show code actions in modeline (lightbulb indicator)
+  (setq lsp-modeline-code-actions-enable t)
+  
+  ;; Don't auto-execute - show menu first!
+  (setq lsp-auto-execute-action nil)
+  
+  ;; Make UI prettier
+  (setq lsp-ui-sideline-show-code-actions t)
+  (setq lsp-ui-sideline-show-hover t))
 ;; LSP Configuration:1 ends here
 
 ;; [[file:config.org::*Corfu Configuration][Corfu Configuration:1]]
@@ -245,7 +257,9 @@
 (after! lsp-rust
   (setq lsp-rust-analyzer-cargo-watch-command "clippy"
         lsp-rust-analyzer-display-chaining-hints t
-        lsp-rust-analyzer-display-parameter-hints t))
+        lsp-rust-analyzer-display-parameter-hints t)
+        (require 'dap-gdb-lldb)
+        (dap-gdb-lldb-setup))
 ;; Rust Configuration:1 ends here
 
 ;; [[file:config.org::*Magit][Magit:1]]
