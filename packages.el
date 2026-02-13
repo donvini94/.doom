@@ -25,7 +25,7 @@
   :recipe (:host nil
            :type git
            :repo "https://codeberg.org/divyaranjan/emacs-reader"
-           :files ("*.el" "render-core.dylib")
+           :files ("*.el" "render-core.dylib" "render-core.so")
            :pre-build ("make" "all")))
 
 ;; Disable pdf-tools and related packages since reader replaces them

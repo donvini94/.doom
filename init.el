@@ -67,7 +67,7 @@
  :lang
  emacs-lisp        ; drown in parentheses
  (go +lsp +tree-sitter)                ; Go with gopls
- haskell
+ ;; haskell
  (java +lsp +tree-sitter)              ; Java with jdtls
  json
  latex

@@ -58,7 +58,9 @@
 (setq user-full-name "Vincenzo Pace"
       user-mail-address "pace@amiconsult.de")
 
-(display-battery-mode 1)
+(when (or (eq system-type 'darwin)
+          (file-directory-p "/sys/class/power_supply/BAT0"))
+  (display-battery-mode 1))
 (display-time-mode 1)
 
 (setq-default
@@ -83,8 +85,9 @@
   (consult-buffer))
 
 ;; macOS key modifiers
-(setq mac-command-modifier 'control
-      mac-control-modifier 'super)
+(when (eq system-type 'darwin)
+  (setq mac-command-modifier 'control
+        mac-control-modifier 'super))
 
 ;; Frameless window
 (add-to-list 'default-frame-alist '(undecorated . t))
@@ -264,8 +267,9 @@
 
 ;; [[file:config.org::*Magit][Magit:1]]
 (after! magit
-  ;; Use homebrew git (faster than Apple git)
-  (setq magit-git-executable "/opt/homebrew/bin/git")
+  ;; Use homebrew git on macOS (faster than Apple git)
+  (when (eq system-type 'darwin)
+    (setq magit-git-executable "/opt/homebrew/bin/git"))
 
   ;; Reduce startup overhead
   (setq magit-refresh-status-buffer t          ; Keep enabled but optimize below
@@ -362,7 +366,10 @@
         org-download-link-format "[[file:%s]]\n"
         org-download-abbreviate-filename-function #'file-relative-name
         org-download-link-format-function #'org-download-link-format-function-default
-        org-download-screenshot-method "screencapture -i %s")
+        org-download-screenshot-method
+        (if (eq system-type 'darwin)
+            "screencapture -i %s"
+          "grim -g \"$(slurp)\" %s"))
   (setq org-download-image-dir
         (lambda ()
           (if buffer-file-name
@@ -549,7 +556,7 @@
 (defun make-orgcapture-frame ()
   "Create a new frame and run org-capture."
   (interactive)
-  (make-frame '((name . "org-capture") (window-system . x)))
+  (make-frame '((name . "org-capture")))
   (select-frame-by-name "org-capture")
   (org-capture))
 ;; Org Capture:1 ends here
