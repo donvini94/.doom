@@ -184,7 +184,9 @@ Comprehensive performance tuning for snappy Emacs on macOS.
              (not (file-remote-p default-directory))
              lsp-use-plists
              (not (functionp 'json-rpc-connection))
-             (executable-find "emacs-lsp-booster"))
+             (executable-find "emacs-lsp-booster")
+             ;; jdtls sends large indexing payloads that overflow lsp-booster's buffer
+             (not (member "-Declipse.application=org.eclipse.jdt.ls.core.id1" orig-result)))
         (progn
           (when-let ((command-from-exec-path (executable-find (car orig-result))))
             (setcar orig-result command-from-exec-path))
@@ -272,6 +274,13 @@ Comprehensive performance tuning for snappy Emacs on macOS.
 
 ** Java Configuration (JDTLS)
 #+begin_src emacs-lisp
+;; Always use system JDK for jdtls — immune to direnv/devbox overrides.
+;; jdtls 1.48+ requires Java 21+; system JDK 25 satisfies this.
+(setq lsp-java-java-path
+      (concat (string-trim (shell-command-to-string "/usr/libexec/java_home")) "/bin/java"))
+
+(setenv "JAVA_HOME" (string-trim (shell-command-to-string "/usr/libexec/java_home")))
+
 (after! lsp-java
   (setq lsp-java-vmargs
         '("-XX:+UseG1GC"
@@ -312,11 +321,11 @@ Comprehensive performance tuning for snappy Emacs on macOS.
 
 ** Magit
 #+begin_src emacs-lisp
-(after! magit
-  ;; Use homebrew git on macOS (faster than Apple git)
-  (when (eq system-type 'darwin)
-    (setq magit-git-executable "/opt/homebrew/bin/git"))
+;; Set before magit loads — version check runs during loading, after! fires too late
+(when (eq system-type 'darwin)
+  (setq magit-git-executable "/opt/homebrew/bin/git"))
 
+(after! magit
   ;; Reduce startup overhead
   (setq magit-refresh-status-buffer t          ; Keep enabled but optimize below
         magit-diff-refine-hunk nil             ; Disable word-granularity diff
