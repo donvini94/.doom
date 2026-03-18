@@ -16,10 +16,9 @@
       jit-lock-defer-time 0                          ; Fontify immediately when idle
       idle-update-delay 1.0)                         ; Reduce UI update frequency
 
-;; === Scrolling Smoothness ===
-(setq scroll-conservatively 101                      ; Never recenter point
-      scroll-margin 2                                ; Keep 2 lines of context
-      scroll-preserve-screen-position t              ; Keep point position on scroll
+;; === Scrolling ===
+;;; NOTE: scroll-conservatively and scroll-margin are set by ultra-scroll below.
+(setq scroll-preserve-screen-position t              ; Keep point position on scroll
       auto-window-vscroll nil)                       ; Disable auto vertical scroll for tall lines
 
 ;; === Bidirectional Text (most users don't need RTL) ===
@@ -32,7 +31,7 @@
 ;; === Native Compilation ===
 (when (native-comp-available-p)
   (setq native-comp-async-report-warnings-errors nil ; Silence async compilation warnings
-        native-comp-deferred-compilation t           ; Compile in background
+        native-comp-jit-compilation t                ; Compile in background (renamed from native-comp-deferred-compilation in Emacs 29)
         native-comp-speed 2))                        ; Optimization level (2 = max safe)
 
 ;; === File Handling ===
@@ -69,7 +68,7 @@
  major-mode 'org-mode
  history-length 1000)
 
-(setq undo-limit 800000000
+(setq undo-limit 80000000                              ; ~76MB (was 762MB — excessively high)
       evil-want-fine-undo t
       truncate-string-ellipsis "…"
       password-cache-expiry nil
@@ -161,35 +160,34 @@
 ;; [[file:config.org::*LSP Configuration][LSP Configuration:1]]
 (after! lsp-mode
   ;; Performance settings
-  (setq lsp-idle-delay 0.1
+  (setq lsp-idle-delay 0.5                              ; 0.1 was too aggressive, causes excessive LSP traffic
         lsp-log-io nil
         lsp-enable-file-watchers nil
         lsp-enable-folding nil
         lsp-enable-text-document-color nil
         lsp-enable-on-type-formatting nil
-        
+
         ;; Completion settings (use corfu)
         lsp-completion-provider :none
         lsp-completion-show-detail t
-        lsp-completion-show-kind t))
+        lsp-completion-show-kind t
 
-(after! lsp-mode
-  ;; Enable code lenses (inline clickable annotations)
-  (setq lsp-lens-enable t)
-  
-  ;; Enable breadcrumb (shows class > method hierarchy)
-  (setq lsp-headerline-breadcrumb-enable t)
-  (setq lsp-headerline-breadcrumb-segments '(symbols))
-  
-  ;; Show code actions in modeline (lightbulb indicator)
-  (setq lsp-modeline-code-actions-enable t)
-  
-  ;; Don't auto-execute - show menu first!
-  (setq lsp-auto-execute-action nil)
-  
-  ;; Make UI prettier
-  (setq lsp-ui-sideline-show-code-actions t)
-  (setq lsp-ui-sideline-show-hover t))
+        ;; Code lenses (inline clickable annotations)
+        lsp-lens-enable t
+
+        ;; Breadcrumb (shows class > method hierarchy)
+        lsp-headerline-breadcrumb-enable t
+        lsp-headerline-breadcrumb-segments '(symbols)
+
+        ;; Code actions in modeline (lightbulb indicator)
+        lsp-modeline-code-actions-enable t
+
+        ;; Don't auto-execute — show menu first
+        lsp-auto-execute-action nil)
+
+  ;; Sideline UI
+  (setq lsp-ui-sideline-show-code-actions t
+        lsp-ui-sideline-show-hover nil))               ; hover in sideline is expensive — use K instead
 ;; LSP Configuration:1 ends here
 
 ;; [[file:config.org::*Corfu Configuration][Corfu Configuration:1]]
@@ -218,25 +216,35 @@
         '(search-ring regexp-search-ring)))
 ;; Vertico Enhancements:1 ends here
 
-;; [[file:config.org::*Python Configuration (basedpyright)][Python Configuration (basedpyright):1]]
-(after! lsp-pyright
-  (setq lsp-pyright-langserver-command "basedpyright"
-        lsp-pyright-auto-import-completions t
-        lsp-pyright-auto-search-paths t
-        lsp-pyright-use-library-code-for-types t
-        lsp-pyright-diagnostic-mode "workspace"))
+;; [[file:config.org::*Python Configuration (ty)][Python Configuration (ty):1]]
+;; Register ty as the Python LSP server
+(after! lsp-mode
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-stdio-connection '("ty" "server"))
+    :activation-fn (lsp-activate-on "python")
+    :server-id 'ty
+    :priority 10                                 ; higher than pyright (1) so ty wins
+    :add-on? nil)))
 
 (after! python
   (setq python-shell-interpreter "python3"))
-;; Python Configuration (basedpyright):1 ends here
+;; Python Configuration (ty):1 ends here
 
 ;; [[file:config.org::*Java Configuration (JDTLS)][Java Configuration (JDTLS):1]]
 ;; Always use system JDK for jdtls — immune to direnv/devbox overrides.
-;; jdtls 1.48+ requires Java 21+; system JDK 25 satisfies this.
-(setq lsp-java-java-path
-      (concat (string-trim (shell-command-to-string "/usr/libexec/java_home")) "/bin/java"))
-
-(setenv "JAVA_HOME" (string-trim (shell-command-to-string "/usr/libexec/java_home")))
+;; jdtls 1.48+ requires Java 21+; devbox may provide an older JDK for the project.
+(cond
+ ((eq system-type 'darwin)
+  (setq lsp-java-java-path
+        (concat (string-trim (shell-command-to-string "/usr/libexec/java_home")) "/bin/java"))
+  (setenv "JAVA_HOME" (string-trim (shell-command-to-string "/usr/libexec/java_home"))))
+ ((eq system-type 'gnu/linux)
+  ;;; NOTE: NixOS — jdk21 installed system-wide in programming.nix.
+  ;;; lsp-java-java-path tells jdtls which JDK to run itself with (needs 21+).
+  ;;; JAVA_HOME for project build tools (maven/gradle) comes from devbox/direnv.
+  (when-let ((java-bin (executable-find "java")))
+    (setq lsp-java-java-path java-bin))))
 
 (after! lsp-java
   (setq lsp-java-vmargs
@@ -269,9 +277,11 @@
 (after! lsp-rust
   (setq lsp-rust-analyzer-cargo-watch-command "clippy"
         lsp-rust-analyzer-display-chaining-hints t
-        lsp-rust-analyzer-display-parameter-hints t)
-        (require 'dap-gdb-lldb)
-        (dap-gdb-lldb-setup))
+        lsp-rust-analyzer-display-parameter-hints t))
+
+;;; NOTE: dap-gdb-lldb-setup downloads binaries on first call — run M-x dap-gdb-lldb-setup manually when needed
+(after! dap-mode
+  (require 'dap-gdb-lldb))
 ;; Rust Configuration:1 ends here
 
 ;; [[file:config.org::*Magit][Magit:1]]
@@ -329,26 +339,21 @@
       doom-variable-pitch-font (font-spec :family "Iosevka" :size 28)
       doom-big-font (font-spec :family "Iosevka" :size 32))
 
-(after! doom-themes
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t))
-
 (setq display-line-numbers-type 'relative)
 
-;; Modus themes configuration
-(use-package modus-themes
-  :init
-  (setq modus-themes-italic-constructs t
-        modus-themes-bold-constructs t
-        modus-themes-mixed-fonts t
-        modus-themes-org-blocks 'gray-background
-        modus-themes-headings '((1 . (variable-pitch 1.5))
-                                (2 . (variable-pitch 1.3))
-                                (3 . (variable-pitch 1.1))
-                                (t . (variable-pitch 1.0)))
-        modus-themes-completions '((matches . (extrabold))
-                                   (selection . (semibold italic))))
-  :bind ("<f5>" . modus-themes-toggle))
+;; Modus themes configuration — set before theme loads
+(setq modus-themes-italic-constructs t
+      modus-themes-bold-constructs t
+      modus-themes-mixed-fonts t
+      modus-themes-org-blocks 'gray-background
+      modus-themes-headings '((1 . (variable-pitch 1.5))
+                              (2 . (variable-pitch 1.3))
+                              (3 . (variable-pitch 1.1))
+                              (t . (variable-pitch 1.0)))
+      modus-themes-completions '((matches . (extrabold))
+                                 (selection . (semibold italic))))
+
+(map! "<f5>" #'modus-themes-toggle)
 ;; Theming:1 ends here
 
 ;; [[file:config.org::*Modeline][Modeline:1]]
@@ -362,12 +367,19 @@
 ;; [[file:config.org::*General Settings][General Settings:1]]
 (setq org-directory "~/org/")
 
-;; Defer org-agenda-files loading
+;; Agenda files — GTD always, roam only if modified in last 90 days (performance)
 (after! org
+  (defun my/recent-org-files (dir &optional days)
+    "Return .org files in DIR modified within DAYS (default 90)."
+    (let ((cutoff (time-subtract (current-time) (days-to-time (or days 90)))))
+      (cl-remove-if-not
+       (lambda (f) (time-less-p cutoff (file-attribute-modification-time (file-attributes f))))
+       (directory-files-recursively dir "\\.org$"))))
+
   (setq org-agenda-files
         (append (directory-files-recursively (concat org-directory "gtd/") "\\.org$")
-                (directory-files-recursively (concat org-directory "roam/daily/") "\\.org$")
-                (directory-files-recursively (concat org-directory "roam/main/") "\\.org$"))))
+                (my/recent-org-files (concat org-directory "roam/daily/") 90)
+                (my/recent-org-files (concat org-directory "roam/main/") 90))))
 
 (after! org-download
   (setq org-download-method 'directory
@@ -379,19 +391,21 @@
         (if (eq system-type 'darwin)
             "screencapture -i %s"
           "grim -g \"$(slurp)\" %s"))
-  (setq org-download-image-dir
-        (lambda ()
-          (if buffer-file-name
-              (concat (file-name-sans-extension buffer-file-name) "-img")
-            "~/org/images"))))
+  ;;; NOTE: org-download-image-dir expects a string, not a lambda.
+  ;;; Use a hook to set it dynamically per-buffer instead.
+  (setq org-download-image-dir "~/org/images")
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (when buffer-file-name
+                (setq-local org-download-image-dir
+                            (concat (file-name-sans-extension buffer-file-name) "-img"))))))
 
 (with-eval-after-load 'org (global-org-modern-mode))
 
 (after! org
-  :config
   (setq org-startup-folded t
         org-preview-latex-directory (expand-file-name "ltximg/" org-directory)
-        org-habit-show-habits t
+        org-habit-show-habits nil                        ; habits tracked separately, not in agenda
         org-default-notes-file (concat org-directory "/gtd/notes.org")
         org-ellipsis " ▼ "
         org-my-anki-file (expand-file-name "anki.org" org-directory)
@@ -413,10 +427,8 @@
 (use-package! org-roam
   :after org
   :config
-  (advice-remove 'org-roam-db-query '+org-roam-try-init-db-a))
+  (advice-remove 'org-roam-db-query '+org-roam-try-init-db-a)
 
-(use-package! org-roam
-  :config
   (setq org-roam-capture-templates
         '(("m" "main" plain
            "%?"
@@ -458,7 +470,7 @@
         '(("d" "daily" entry
            "* %?"
            :target (file+head "%<%Y-%m-%d>.org"
-                              "#+title: %<%Y-%m-%d %a>\n#+filetags:\n\n#+BEGIN: clocktable\n#+END:\n\n* The one thing \n* Today \n* Tasks [/] [%] \n - [ ] Stretch\n - [ ] Workout\n - [ ] Anki\n - [ ]\n\n* Daily Review\n** Achievement Review [0/3]\n - [ ] What did I accomplish today?\n - [ ] What went well today?\n - [ ] What's my biggest win?\n\n** Progress Tracking [0/4]\n - [ ] Career Goal Progress: [Rating 1-10] \n   - Notes:\n - [ ] Financial Goal Progress: [Rating 1-10]\n   - Notes:\n - [ ] Personal Development Progress: [Rating 1-10]\n   - Notes:\n - [ ] Health Goal Progress: [Rating 1-10]\n   - Notes:\n\n** Learning & Insights\n - What did I learn today?\n - What could I have done better?\n\n** Tomorrow's Priorities\n - Priority 1:\n - Priority 2:\n - Priority 3:"))
+                              "#+title: %<%Y-%m-%d %a>\n#+filetags:\n\n#+BEGIN: clocktable\n#+END:\n\n* The one thing\n* Today\n\n* Daily Review\n** What did I accomplish today?\n** What went well?\n** What could I have done better?\n** Tomorrow's Priorities\n - Priority 1:\n - Priority 2:\n - Priority 3:"))
           ("w" "weekly" entry
            "* Weekly Review: Week %<%U>"
            :target (file+head "weekly/W%<%V_%Y>.org"
@@ -473,25 +485,17 @@
                               "#+title: 1on1 with %^{Name} on %<%Y-%m-%d>\n#+filetags: :1on1:\n\n* Check-In\n- Mood today: \n- Energy level: \n\n* Wins Since Last Time\n- \n\n* Challenges\n- \n\n* Support Needed\n- \n\n* Learning & Growth\n- What did you learn recently?\n- What do you want to focus on?\n\n* Feedback Exchange\n- My feedback for you:\n- Your feedback for me:\n\n* Next Steps / Commitments\n- [ ] \n- [ ] \n- [ ] \n")))))
 ;; Org Roam:1 ends here
 
-;; [[file:config.org::*Org Pomodoro Statusbar][Org Pomodoro Statusbar:1]]
-(defun ruborcalor/org-pomodoro-time ()
-  "Return the remaining pomodoro time"
-  (if (org-pomodoro-active-p)
-      (cl-case org-pomodoro-state
-        (:pomodoro
-         (format "Pomo: %d minutes - %s" (/ (org-pomodoro-remaining-seconds) 60) org-clock-heading))
-        (:short-break
-         (format "Short break time: %d minutes" (/ (org-pomodoro-remaining-seconds) 60)))
-        (:long-break
-         (format "Long break time: %d minutes" (/ (org-pomodoro-remaining-seconds) 60)))
-        (:overtime
-         (format "Overtime! %d minutes" (/ (org-pomodoro-remaining-seconds) 60))))
-    "No active pomo"))
-;; Org Pomodoro Statusbar:1 ends here
+;; [[file:config.org::*Org Habits][Org Habits:1]]
+;;; NOTE: org-habit is loaded by Doom's org module. We just configure it here.
+(after! org-habit
+  (setq org-habit-graph-column 60
+        org-habit-preceding-days 14
+        org-habit-following-days 3
+        org-habit-show-habits-only-for-today nil))
+;; Org Habits:1 ends here
 
 ;; [[file:config.org::*Org-auto-tangle][Org-auto-tangle:1]]
-(use-package org-auto-tangle
-  :defer t
+(use-package! org-auto-tangle
   :hook (org-mode . org-auto-tangle-mode)
   :config
   (setq org-auto-tangle-default t))
@@ -505,8 +509,6 @@
         :desc "Anki Push tree"
         "m a p" #'anki-editor-push-new-notes)
   :hook (org-capture-after-finalize . anki-editor-reset-cloze-number))
-
-(setq org-my-anki-file "~/org/anki.org")
 
 (defun my-anki-editor-mode-hook ()
   (when (string-equal (buffer-file-name) (expand-file-name "~/org/anki.org"))
@@ -545,22 +547,14 @@
                  (file+headline "~/org/gtd/inbox.org" "Capture")
                  "* TODO %?\n  %i\n  %a")))
 
-;; Clipboard access
-(setq select-enable-clipboard t
-      select-enable-primary t)
-
 ;; Close org-capture frame when done
-(defadvice org-capture-finalize
-    (after delete-capture-frame activate)
-  "Advise capture-finalize to close the frame"
-  (if (equal "org-capture" (frame-parameter nil 'name))
-      (delete-frame)))
+(defun my/delete-capture-frame (&rest _)
+  "Close the org-capture frame if we're in one."
+  (when (equal "org-capture" (frame-parameter nil 'name))
+    (delete-frame)))
 
-(defadvice org-capture-destroy
-    (after delete-capture-frame activate)
-  "Advise capture-destroy to close the frame"
-  (if (equal "org-capture" (frame-parameter nil 'name))
-      (delete-frame)))
+(advice-add 'org-capture-finalize :after #'my/delete-capture-frame)
+(advice-add 'org-capture-destroy :after #'my/delete-capture-frame)
 
 (defun make-orgcapture-frame ()
   "Create a new frame and run org-capture."
@@ -571,20 +565,179 @@
 ;; Org Capture:1 ends here
 
 ;; [[file:config.org::*Org agenda][Org agenda:1]]
-(setq org-agenda-custom-commands
-      '(("d" "Completed tasks today"
-         agenda ""
-         ((org-agenda-start-day "+0d")
-          (org-agenda-span 1)
-          (org-agenda-entry-types '(:closed))))))
+(use-package! org-super-agenda
+  :after org-agenda
+  :config
+  (org-super-agenda-mode 1)
+
+  ;; Fix evil navigation on super-agenda header lines.
+  ;; Without this, j=calendar, k=capture, h=holidays, l=log on headers.
+  (setq org-super-agenda-header-map (make-sparse-keymap)))
+
+(after! org
+  ;; === Agenda display ===
+  (setq org-agenda-skip-timestamp-if-done t
+        org-agenda-skip-deadline-if-done t
+        org-agenda-skip-scheduled-if-done t
+        org-agenda-skip-scheduled-if-deadline-is-shown t
+        org-agenda-skip-timestamp-if-deadline-is-shown t)
+
+  ;; Use full frame for agenda (more horizontal space)
+  (setq org-agenda-window-setup 'only-window)
+
+  ;; Tags at right edge of window, not a fixed column
+  (setq org-agenda-tags-column 'auto)
+
+  ;; Clean time grid — no "now" marker, no grid labels
+  (setq org-agenda-current-time-string "")
+  (setq org-agenda-time-grid '((daily) () "" ""))
+
+  ;; Compact prefix — time + category, use available width
+  (setq org-agenda-prefix-format
+        '((agenda . "  %?-2i %t ")
+          (todo   . "  %i %-12:c")
+          (tags   . "  %i %-12:c")
+          (search . "  %i %-12:c")))
+
+  ;; Thinner block separator between agenda sections
+  (setq org-agenda-block-separator ?─)
+
+  ;; Show deadlines 10 days in advance
+  (setq org-deadline-warning-days 10)
+
+  ;; No tag inheritance — only tags directly on the heading are used.
+  ;; Filetags from org-roam and parent heading tags are excluded.
+  ;;; NOTE: If a sub-task needs a tag, put it directly on that heading.
+  (setq org-agenda-use-tag-inheritance nil)
+
+  ;; Don't show habits in agenda (tracked separately via org-habit)
+  (setq org-habit-show-habits nil)
+
+  ;; === Category icons (deferred until nerd-icons loads) ===
+  (after! nerd-icons
+    (setq org-agenda-category-icon-alist
+          `(("gtd"       ,(list (nerd-icons-faicon "nf-fa-check_square_o")) nil nil :ascent center)
+            ("inbox"      ,(list (nerd-icons-faicon "nf-fa-inbox")) nil nil :ascent center)
+            ("roam"       ,(list (nerd-icons-faicon "nf-fa-brain")) nil nil :ascent center)
+            ("anki"       ,(list (nerd-icons-faicon "nf-fa-graduation_cap")) nil nil :ascent center)
+            ("reading"    ,(list (nerd-icons-faicon "nf-fa-book")) nil nil :ascent center)
+            ("meeting"    ,(list (nerd-icons-faicon "nf-fa-users")) nil nil :ascent center)
+            ("daily"      ,(list (nerd-icons-faicon "nf-fa-calendar")) nil nil :ascent center))))
+
+  ;; === Dashboard — single unified view ===
+  (setq org-agenda-custom-commands
+        '(("o" "Dashboard"
+           ;; Block 1: Today (span 1) — schedule, overdue, today's dated tasks
+           ((agenda "" ((org-agenda-span 1)
+                        (org-agenda-start-day "+0d")
+                        (org-agenda-overriding-header "")
+                        (org-deadline-warning-days 0)
+                        (org-super-agenda-groups
+                         '((:name " Schedule "
+                            :time-grid t
+                            :order 0)
+                           (:name " Overdue "
+                            :deadline past
+                            :scheduled past
+                            :face error
+                            :order 1)
+                           (:name " Today "
+                            :date today
+                            :scheduled today
+                            :order 2)
+                           (:discard (:anything t))))))
+
+            ;; Block 2: This week (days +1 to +7)
+            (agenda "" ((org-agenda-span 7)
+                        (org-agenda-start-day "+1d")
+                        (org-agenda-overriding-header "")
+                        (org-deadline-warning-days 0)
+                        (org-super-agenda-groups
+                         '((:auto-tags t)))))
+
+            ;; Block 3: All open tasks (including unscheduled from dailies) — grouped by tag
+            (alltodo "" ((org-agenda-overriding-header "")
+                         (org-super-agenda-groups
+                          '((:name " Inbox "
+                             :file-path "inbox"
+                             :order 0)
+                            (:name " Next Actions "
+                             :todo "NEXT"
+                             :order 1)
+                            (:auto-tags t
+                             :order 3)
+                            (:name " On Hold "
+                             :todo "HOLD"
+                             :order 9)
+                            (:discard (:anything t))))))))
+
+          ;; Quick views
+          ("n" "Next Actions"
+           ((alltodo "" ((org-agenda-overriding-header "")
+                         (org-super-agenda-groups
+                          '((:name " Next Actions "
+                             :todo "NEXT"
+                             :order 1)
+                            (:discard (:anything t))))))))
+
+          ("d" "Completed today"
+           agenda ""
+           ((org-agenda-start-day "+0d")
+            (org-agenda-span 1)
+            (org-agenda-entry-types '(:closed)))))))
+
+;; === Post-render: clean "Tags: " prefix and apply box styling ===
+(defun my/org-agenda-prettify-headers ()
+  "Clean auto-group headers and re-apply box face in the agenda buffer."
+  (let ((inhibit-read-only t))
+    (save-excursion
+      (goto-char (point-min))
+      ;; Strip "Tags: " prefix and re-apply the super-agenda-header face
+      (while (re-search-forward "^ Tags: \\(.+\\)$" nil t)
+        (let* ((tag-name (match-string 1))
+               (new-text (concat " " (capitalize tag-name) " "))
+               (beg (match-beginning 0))
+               (end (match-end 0)))
+          (replace-match new-text)
+          (put-text-property beg (+ beg (length new-text))
+                             'face 'org-super-agenda-header))))))
+(add-hook 'org-agenda-finalize-hook #'my/org-agenda-prettify-headers)
+
+;; Box styling via background color + padding — works reliably on PGTK/Wayland
+;; (`:style flat-button` doesn't render on PGTK, so we fake it with bg + box color)
+(defun my/org-agenda-style-super-agenda-headers ()
+  "Apply box styling to org-super-agenda group headers after theme loads."
+  (modus-themes-with-colors
+    (set-face-attribute 'org-super-agenda-header nil
+                        :inherit nil
+                        :weight 'bold
+                        :foreground fg-main
+                        :background bg-dim
+                        :box `(:line-width (2 . 6) :color ,bg-dim)
+                        :overline nil
+                        :underline nil)))
+;; Apply on theme load/toggle (modus themes reset faces)
+(add-hook 'modus-themes-after-load-theme-hook #'my/org-agenda-style-super-agenda-headers)
+;; Also apply now if theme is already loaded
+(with-eval-after-load 'org-super-agenda
+  (when (facep 'org-super-agenda-header)
+    (my/org-agenda-style-super-agenda-headers)))
+
+;; Agenda buffer styling — clean and focused
+(defun my/org-agenda-open-hook ()
+  "Style the agenda buffer for focused reading."
+  (setq-local line-spacing 4)
+  (display-line-numbers-mode -1))
+(add-hook 'org-agenda-mode-hook #'my/org-agenda-open-hook)
+
+;; Quick access: SPC A opens the dashboard directly
+(map! :leader
+      :desc "Agenda dashboard" "A" (lambda () (interactive) (org-agenda nil "o")))
 ;; Org agenda:1 ends here
 
 ;; [[file:config.org::*Dired with Dirvish][Dired with Dirvish:1]]
-;; Basic dired keybindings (dirvish handles most functionality)
-(map! :leader
-      (:prefix ("d" . "dired")
-       :desc "Open dired" "d" #'dired
-       :desc "Dired jump to current" "j" #'dired-jump))
+;;; NOTE: Removed SPC d d / SPC d j — they conflicted with SPC d (DAP debugger prefix).
+;;; Use SPC . (find-file) or SPC o - (dirvish side panel) instead.
 
 ;; Trash handling on macOS
 (when (eq system-type 'darwin)
@@ -609,7 +762,7 @@
           :key (lambda ()
                  (or (getenv "ANTHROPIC_API_KEY")
                      (auth-source-pick-first-password :host "api.anthropic.com"))))
-        gptel-model 'claude-sonnet-4-20250514
+        gptel-model 'claude-sonnet-4-6-20250610
         gptel-default-mode 'org-mode))
 
 ;; Keybindings
@@ -683,3 +836,150 @@
 (with-eval-after-load 'bookmark
   (fset 'pdf-view-bookmark-jump-handler #'my/pdf-view-bookmark-jump-handler))
 ;; Document Reader (emacs-reader):1 ends here
+
+;; [[file:config.org::*Terraform/HCL][Terraform/HCL:1]]
+(use-package! terraform-mode
+  :mode ("\\.tf\\'" "\\.tfvars\\'")
+  :config
+  (add-hook 'terraform-mode-hook #'terraform-format-on-save-mode))
+
+(use-package! hcl-mode
+  :mode ("\\.hcl\\'" "\\.nomad\\'"))
+;; Terraform/HCL:1 ends here
+
+;; [[file:config.org::*String Inflection (case conversion)][String Inflection (case conversion):1]]
+(use-package! string-inflection
+  :commands (string-inflection-all-cycle
+             string-inflection-camelcase
+             string-inflection-lower-camelcase
+             string-inflection-underscore
+             string-inflection-kebab-case)
+  :init
+  (map! :leader
+        (:prefix ("i" . "inflect")
+         :desc "Cycle case" "i" #'string-inflection-all-cycle
+         :desc "CamelCase" "c" #'string-inflection-camelcase
+         :desc "camelCase" "l" #'string-inflection-lower-camelcase
+         :desc "snake_case" "s" #'string-inflection-underscore
+         :desc "kebab-case" "k" #'string-inflection-kebab-case
+         :desc "UPPER_CASE" "u" #'string-inflection-upcase)))
+;; String Inflection (case conversion):1 ends here
+
+;; [[file:config.org::*Verb (HTTP client in org-mode)][Verb (HTTP client in org-mode):1]]
+(use-package! verb
+  :after org
+  :config
+  (define-key org-mode-map (kbd "C-c C-r") verb-command-map))
+
+;;; NOTE: Usage — create org headings with HTTP specs:
+;;;   * Get all identities                     :verb:
+;;;   GET https://tenant.api.identitynow.com/v3/identities
+;;;   Accept: application/json
+;;;   Authorization: Bearer {{(getenv "ISC_TOKEN")}}
+;;; Then C-c C-r C-r to send, C-c C-r C-s to send and show response.
+;;; Verb inherits headers from parent headings — put auth at the top level.
+;; Verb (HTTP client in org-mode):1 ends here
+
+;; [[file:config.org::*Ansible][Ansible:1]]
+(use-package! ansible
+  :commands ansible
+  :hook (yaml-mode . (lambda ()
+                       (when (and buffer-file-name
+                                  (or (string-match-p "/\\(roles\\|tasks\\|handlers\\|playbooks\\|ansible\\)/" buffer-file-name)
+                                      (string-match-p "\\(playbook\\|site\\|main\\)\\.ya?ml\\'" buffer-file-name)))
+                         (ansible 1)))))
+
+(use-package! ansible-doc
+  :after ansible
+  :hook (ansible-mode . ansible-doc-mode)
+  :config
+  (map! :map ansible-doc-mode-map
+        :leader
+        :desc "Ansible doc" "h a" #'ansible-doc))
+;; Ansible:1 ends here
+
+;; [[file:config.org::*Nix LSP][Nix LSP:1]]
+;;; NOTE: Requires nixd installed. On NixOS add to environment.systemPackages or devShell.
+;;; nixd provides completions, diagnostics, goto-def, and flake option evaluation.
+(after! lsp-mode
+  (setq lsp-nix-nixd-server-path "nixd"))
+;; Nix LSP:1 ends here
+
+;; [[file:config.org::*Ruff (Python linting + formatting)][Ruff (Python linting + formatting):1]]
+;;; NOTE: Ruff replaces black + isort + pyflakes — single Rust binary, same Astral ecosystem as ty.
+;;; format-on-save uses ruff format (via apheleia or format +onsave).
+(after! lsp-mode
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-stdio-connection '("ruff" "server"))
+    :activation-fn (lsp-activate-on "python")
+    :server-id 'ruff
+    :priority 5                                  ; lower than ty (10), acts as add-on linter
+    :add-on? t)))                                ; runs alongside ty, doesn't replace it
+
+(setq-hook! 'python-mode-hook
+  +format-with-lsp nil)                          ; let ruff handle formatting, not ty
+
+(after! apheleia
+  (setf (alist-get 'python-mode apheleia-mode-alist) '(ruff))
+  (setf (alist-get 'python-ts-mode apheleia-mode-alist) '(ruff))
+  (setf (alist-get 'ruff apheleia-formatters) '("ruff" "format" "-")))
+;; Ruff (Python linting + formatting):1 ends here
+
+;; [[file:config.org::*Magit-delta][Magit-delta:1]]
+;;; NOTE: Requires delta binary in PATH (already installed in NixOS config).
+(use-package! magit-delta
+  :hook (magit-mode . magit-delta-mode))
+;; Magit-delta:1 ends here
+
+;; [[file:config.org::*Evil Tree-sitter Text Objects][Evil Tree-sitter Text Objects:1]]
+;;; Adds tree-sitter powered text objects to Evil:
+;;;   vaf / daf — select/delete a function
+;;;   vac / dac — select/delete a class
+;;;   vaa / daa — select/delete a parameter/argument
+;;;   vai / dai — select/delete a conditional (if)
+;;;   val / dal — select/delete a loop
+(use-package! evil-textobj-tree-sitter
+  :after evil
+  :config
+  ;; "a" (outer) and "i" (inner) text objects for functions
+  (define-key evil-outer-text-objects-map "f"
+    (cons "a-function" (evil-textobj-tree-sitter-get-textobj "function.outer")))
+  (define-key evil-inner-text-objects-map "f"
+    (cons "inner-function" (evil-textobj-tree-sitter-get-textobj "function.inner")))
+
+  ;; Classes
+  (define-key evil-outer-text-objects-map "c"
+    (cons "a-class" (evil-textobj-tree-sitter-get-textobj "class.outer")))
+  (define-key evil-inner-text-objects-map "c"
+    (cons "inner-class" (evil-textobj-tree-sitter-get-textobj "class.inner")))
+
+  ;; Arguments/parameters
+  (define-key evil-outer-text-objects-map "a"
+    (cons "a-argument" (evil-textobj-tree-sitter-get-textobj "parameter.outer")))
+  (define-key evil-inner-text-objects-map "a"
+    (cons "inner-argument" (evil-textobj-tree-sitter-get-textobj "parameter.inner")))
+
+  ;; Conditionals
+  (define-key evil-outer-text-objects-map "i"
+    (cons "a-conditional" (evil-textobj-tree-sitter-get-textobj "conditional.outer")))
+  (define-key evil-inner-text-objects-map "i"
+    (cons "inner-conditional" (evil-textobj-tree-sitter-get-textobj "conditional.inner")))
+
+  ;; Loops
+  (define-key evil-outer-text-objects-map "l"
+    (cons "a-loop" (evil-textobj-tree-sitter-get-textobj "loop.outer")))
+  (define-key evil-inner-text-objects-map "l"
+    (cons "inner-loop" (evil-textobj-tree-sitter-get-textobj "loop.inner"))))
+;; Evil Tree-sitter Text Objects:1 ends here
+
+;; [[file:config.org::*Ultra-scroll][Ultra-scroll:1]]
+;;; NOTE: ultra-scroll replaces pixel-scroll-precision-mode with ~40% faster scrolling.
+;;; Requires Emacs 29+ with pixel-scroll support.
+(use-package! ultra-scroll
+  :init
+  (setq scroll-conservatively 101
+        scroll-margin 0)             ; ultra-scroll handles margins itself
+  :config
+  (ultra-scroll-mode 1))
+;; Ultra-scroll:1 ends here

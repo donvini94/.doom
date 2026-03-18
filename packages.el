@@ -7,7 +7,7 @@
 (package! org-auto-tangle)
 (package! org-modern
   :recipe (:host github :repo "minad/org-modern"))
-(package! org-clock-convenience)
+(package! org-super-agenda)
 
 ;; Themes
 (package! modus-themes)
@@ -17,9 +17,38 @@
 (package! ultra-scroll)  ; ~40% faster than pixel-scroll-precision-mode
 (package! claude-code-ide
   :recipe (:host github :repo "manzaltu/claude-code-ide.el"))
-(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")))
 (package! devcontainer
   :recipe (:host github :repo "johannes-mueller/devcontainer.el"))
+;; TOML support (Cargo.toml, pyproject.toml, etc.)
+(package! toml-mode)
+
+;; Terraform/HCL support
+(package! terraform-mode)
+(package! hcl-mode)
+
+;; HTTP client (lives inside org-mode buffers)
+(package! verb)
+
+;; Case conversion (camelCase ↔ snake_case ↔ kebab-case)
+(package! string-inflection)
+
+;; Ansible support
+(package! ansible)
+(package! ansible-doc)
+
+;; Git: delta integration for magit
+(package! magit-delta)
+
+;; Evil: tree-sitter text objects (vaf = select function, vic = select class)
+(package! evil-textobj-tree-sitter
+  :recipe (:host github :repo "meain/evil-textobj-tree-sitter"
+           :files ("*.el" "queries" "treesit-queries")))
+
+;;; NOTE: jinx disabled — needs enchant2 dev headers for native module compilation.
+;;; On NixOS, headers aren't in /usr/include/. Needs a proper nix-shell build env
+;;; or a pre-compiled emacs-jinx package. Re-enable once resolved.
+;; (package! jinx)
+
 ;; Document reader (replaces pdf-tools, also handles EPUB, MOBI, etc.)
 (package! reader
   :recipe (:host nil

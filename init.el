@@ -20,7 +20,6 @@
  (window-select +numbers) ; visually switch windows
  workspaces        ; tab emulation, persistence & separate workspaces
  zen               ; distraction-free coding or writing
- ;; Removed neotree - use dirvish (SPC . or SPC o -) and projectile (SPC p p) instead
 
  :editor
  (evil +everywhere); come to the dark side, we have cookies
@@ -44,6 +43,7 @@
 
  :checkers
  syntax              ; tasing you for every semicolon you forget
+ ;;spell             ; replaced by jinx (faster, async, enchant-based)
 
  :tools
  (debugger +lsp)          ; FIXME stepping through code, to help you add bugs
@@ -70,13 +70,13 @@
  ;; haskell
  (java +lsp +tree-sitter)              ; Java with jdtls
  json
- latex
+ (latex +cdlatex)                      ; fast math/environment input with cdlatex
  markdown
- nix
+ (nix +lsp +tree-sitter)                  ; Nix with nixd LSP and tree-sitter
  (org +dragndrop +pomodoro +roam)      ; organize your plain life in plain text
- (python +lsp +pyright +tree-sitter)   ; Python with basedpyright
+ (python +lsp +tree-sitter)            ; Python with ty (Astral's Rust-based LSP)
  (rust +lsp +tree-sitter)              ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
- (sh +lsp)                             ; she sells {ba,z,fi}sh shells on the C xor
+ (sh +lsp +tree-sitter)                ; she sells {ba,z,fi}sh shells on the C xor
  web                                   ; the tubes
  (yaml +lsp)                           ; JSON, but readable
 
