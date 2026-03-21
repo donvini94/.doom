@@ -51,11 +51,12 @@
 
 ;; Document reader (replaces pdf-tools, also handles EPUB, MOBI, etc.)
 (package! reader
-  :recipe (:host nil
-           :type git
-           :repo "https://codeberg.org/divyaranjan/emacs-reader"
-           :files ("*.el" "render-core.dylib" "render-core.so")
-           :pre-build ("make" "all")))
+  :recipe `(:host nil
+            :type git
+            :repo "https://codeberg.org/divyaranjan/emacs-reader"
+            :files ("*.el" "render-core.dylib" "render-core.so")
+            :pre-build ,(when (eq system-type 'darwin)
+                          '(("make" "clean" "all")))))
 
 ;; Disable pdf-tools and related packages since reader replaces them
 (package! pdf-tools :disable t)

@@ -302,7 +302,18 @@ ty is Astral's Rust-based Python type checker and language server (from the Ruff
 
   (setq lsp-java-completion-import-order '["java" "javax" "org" "com"]
         lsp-java-save-actions-organize-imports t
-        lsp-java-format-on-type-enabled t))
+        lsp-java-format-on-type-enabled t)
+
+  ;; Map project source levels to actual JDK installations.
+  ;; jdtls resolves standard library types from the matching runtime,
+  ;; so the project gets java.lang.Object from JDK 17 — not JDK 25.
+  (when (eq system-type 'darwin)
+    (setq lsp-java-configuration-runtimes
+          '[(:name "JavaSE-17"
+             :path "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+             :default t)
+            (:name "JavaSE-25"
+             :path "/Library/Java/JavaVirtualMachines/jdk-25.jdk/Contents/Home")])))
 #+end_src
 
 ** Go Configuration (gopls)
@@ -931,8 +942,7 @@ Replaces pdf-tools with a modern reader supporting PDF, EPUB, MOBI, FB2, XPS, CB
         :n "W" #'reader-fit-to-width
         :n "H" #'reader-fit-to-height
         :n ":" #'reader-goto-page
-        :n "q" #'quit-window
-        :n "Q" #'reader-close-doc))
+        :n "q" #'kill-current-buffer))
 
 ;; Handle old pdf-view bookmarks - redirect to reader
 (defun my/pdf-view-bookmark-jump-handler (bookmark)
