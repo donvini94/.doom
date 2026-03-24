@@ -295,6 +295,35 @@
   (require 'dap-gdb-lldb))
 ;; Rust Configuration:1 ends here
 
+;; [[file:config.org::*Typst Configuration (tinymist)][Typst Configuration (tinymist):1]]
+;;; lsp-mode ships lsp-typst.el with full tinymist client registration.
+(use-package! typst-ts-mode
+  :mode "\\.typ\\'"
+  :config
+  (after! lsp-mode
+    (add-to-list 'lsp-language-id-configuration '(typst-ts-mode . "typst")))
+
+  (add-hook 'typst-ts-mode-hook #'lsp!)
+
+  ;; Format via LSP (typstyle) on save
+  (add-hook 'typst-ts-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook #'lsp-format-buffer nil t)))
+
+  ;; Live preview via tinymist's built-in web server (hot-reloads on save)
+  (defun my/typst-preview ()
+    "Start tinymist live preview in browser."
+    (interactive)
+    (let ((file (buffer-file-name)))
+      (unless file (user-error "Buffer is not visiting a file"))
+      (start-process "tinymist-preview" "*tinymist-preview*" "tinymist" "preview" file)
+      (message "tinymist preview started — opening browser")))
+
+  (map! :map typst-ts-mode-map
+        :localleader
+        "p" #'my/typst-preview))
+;; Typst Configuration (tinymist):1 ends here
+
 ;; [[file:config.org::*Magit][Magit:1]]
 ;; Set before magit loads — version check runs during loading, after! fires too late
 (when (eq system-type 'darwin)

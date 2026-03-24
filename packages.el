@@ -58,6 +58,10 @@
             :pre-build ,(when (eq system-type 'darwin)
                           '(("make" "clean" "all")))))
 
+;; Typst: tree-sitter major mode + tinymist LSP
+(package! typst-ts-mode
+  :recipe (:host codeberg :repo "meow_king/typst-ts-mode"))
+
 ;; Disable pdf-tools and related packages since reader replaces them
 (package! pdf-tools :disable t)
 (package! org-pdftools :disable t)
